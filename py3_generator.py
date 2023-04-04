@@ -32,12 +32,17 @@ TYPE_TO_FN_MAP = {
     # "strz": "", // TODO
 }
 
+KS_HELPER_SRC_PATH = "include/py3/ks_helper.py"
+
+
 class Python3Generator(Generator):
 
     def __init__(self, class_name: str, seq: list[dict[str, any]]) -> None:
         # super().__init__()
         self.class_name = Python3Generator._sanitise_class_name(class_name)
         self.seq = seq
+        with open(KS_HELPER_SRC_PATH, "r") as f:
+            self.ks_helper_src = f.read()
 
     @staticmethod
     def _sanitise_class_name(class_name: str) -> str:
@@ -58,33 +63,16 @@ class Python3Generator(Generator):
         return result
 
     def imports(self) -> str:
-        imports_statements = """import string
-from random import Random
-import sys
-import time
+        imports_statements = """import sys
         """
         return imports_statements
 
     def constants(self) -> str:
-        const = """UTF8_CHARSET = string.printable  # Use printable string only for now
-        """
+        const = ""
         return const
 
     def ks_helper_class(self) -> str:
-        statement = """class KsHelper:
-    def __init__(self, seed=time.time_ns()):
-        self.rng = Random(seed)
-
-    def rand_bytes(self, n_bytes):
-        return self.rng.randbytes(n_bytes)
-
-    def rand_utf8(self, n_char):
-        ret = ""
-        while len(ret) < n_char:
-            ret += self.rng.choice(UTF8_CHARSET)
-        return ret.encode(encoding="utf-8")
-        """
-        return statement
+        return self.ks_helper_src
 
     def seq_class(self) -> str:
         return """class %s:
@@ -136,12 +124,10 @@ import time
     sys.stdout.buffer.write(record.generate())
     sys.stdout.flush()""" % self.class_name
 
-
-
     def generate_code(self) -> None:
+        print(self.ks_helper_class())
         print(self.imports())
         print(self.constants())
-        print(self.ks_helper_class())
         print(self.seq_class())
         print(self.generate_fn())
         print(self.generate_fns())
