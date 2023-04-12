@@ -8,12 +8,134 @@ KS_HELPER_SRC_PATH = "include/py3/ks_helper.py"
 
 class Python3Generator(Generator):
 
+    KS_HELPER_INSTANCE = "self.ks_helper"
+
     def __init__(self, class_name: str, seq: list[dict[str, any]]) -> None:
         # super().__init__()
         self.class_name = Python3Generator._sanitise_class_name(class_name)
         self.seq = seq
         with open(KS_HELPER_SRC_PATH, "r") as f:
             self.ks_helper_src = f.read()
+
+    @staticmethod
+    def _get_ks_helper_fn_call(fn_name: str) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.{fn_name}"
+
+    @staticmethod
+    def gen_bytes_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes({kwargs.get('n_bytes')})"
+
+    @staticmethod
+    def gen_u1_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(1)"
+
+    @staticmethod
+    def gen_u2_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_u2le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_u2be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_u4_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_u4le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_u4be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_u8_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_u8le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_u8be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_s1_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(1)"
+
+    @staticmethod
+    def gen_s2_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_s2le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_s2be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(2)"
+
+    @staticmethod
+    def gen_s4_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_s4le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_s4be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_s8_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_s8le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_s8be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_f4_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_f4le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_f4be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(4)"
+
+    @staticmethod
+    def gen_f8_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_f8le_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_f8be_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_bytes(8)"
+
+    @staticmethod
+    def gen_str_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_utf8({kwargs.get('n_bytes')})"
+
+    @staticmethod
+    def gen_strz_fn(**kwargs) -> str:
+        return f"{Python3Generator.KS_HELPER_INSTANCE}.rand_utf8({kwargs.get('n_bytes')}, \"\\0\")"
 
     @staticmethod
     def _sanitise_class_name(class_name: str) -> str:
@@ -45,7 +167,8 @@ class Python3Generator(Generator):
         collision)
         """
         result = fn_name.lower()
-        to_remove_chars = string.punctuation.replace("_", "") + string.whitespace
+        to_remove_chars = string.punctuation.replace(
+            "_", "") + string.whitespace
         for c in to_remove_chars:
             result = result.replace(c, "")
         result += "_"
@@ -64,23 +187,26 @@ class Python3Generator(Generator):
             if data_type is None or data_type == "str" or data_type == "strz":
                 sz = int(attribute["size"])
                 # TODO check sz greater than 0, terminator can fit in sz
-            result += f"        return {self.TYPE_TO_FN_MAP[data_type](n_bytes = sz)}\n\n"
+            result += f"        return {self.get_gen_type_fn(data_type)(n_bytes = sz)}\n\n"
         return result
 
     def _handle_contents_key(self, attribute: dict[str, Any]) -> str:
         contents = attribute["contents"]
         if not (isinstance(contents, str) or isinstance(contents, list)):
-            raise TypeError("`contents` key accepts UTF-8 string or array type only.")
+            raise TypeError(
+                "`contents` key accepts UTF-8 string or array type only.")
         b_arr = []
         for idx, elem in enumerate(contents):
             if isinstance(elem, str):
                 b_arr.extend(elem.encode(encoding="utf-8"))
             elif isinstance(elem, int):
                 if elem > 0xFF or elem < 0:
-                    raise ValueError(f"Out of range byte value at index {idx}.")
+                    raise ValueError(
+                        f"Out of range byte value at index {idx}.")
                 b_arr.append(elem)
             else:
-                raise TypeError(f"`contents` key contain an invalid type at index {idx}.")
+                raise TypeError(
+                    f"`contents` key contain an invalid type at index {idx}.")
         return f"        return {bytes(b_arr)}"
 
     def imports(self) -> str:
