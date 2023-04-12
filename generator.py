@@ -1,3 +1,6 @@
+from typing import Any, Callable, Union
+
+
 class Generator:
 
     @staticmethod
@@ -5,126 +8,126 @@ class Generator:
         return f"{Generator.KS_HELPER_INSTANCE}.{fn_name}"
 
     @staticmethod
-    def gen_bytes_fn(**kwargs) -> str:
+    def gen_bytes_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u1_fn(**kwargs) -> str:
+    def gen_u1_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u2_fn(**kwargs) -> str:
+    def gen_u2_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u2le_fn(**kwargs) -> str:
+    def gen_u2le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u2be_fn(**kwargs) -> str:
+    def gen_u2be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u4_fn(**kwargs) -> str:
+    def gen_u4_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u4le_fn(**kwargs) -> str:
+    def gen_u4le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u4be_fn(**kwargs) -> str:
+    def gen_u4be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u8_fn(**kwargs) -> str:
+    def gen_u8_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u8le_fn(**kwargs) -> str:
+    def gen_u8le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_u8be_fn(**kwargs) -> str:
+    def gen_u8be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s1_fn(**kwargs) -> str:
+    def gen_s1_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s2_fn(**kwargs) -> str:
+    def gen_s2_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s2le_fn(**kwargs) -> str:
+    def gen_s2le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s2be_fn(**kwargs) -> str:
+    def gen_s2be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s4_fn(**kwargs) -> str:
+    def gen_s4_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s4le_fn(**kwargs) -> str:
+    def gen_s4le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s4be_fn(**kwargs) -> str:
+    def gen_s4be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s8_fn(**kwargs) -> str:
+    def gen_s8_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s8le_fn(**kwargs) -> str:
+    def gen_s8le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_s8be_fn(**kwargs) -> str:
+    def gen_s8be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f4_fn(**kwargs) -> str:
+    def gen_f4_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f4le_fn(**kwargs) -> str:
+    def gen_f4le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f4be_fn(**kwargs) -> str:
+    def gen_f4be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f8_fn(**kwargs) -> str:
+    def gen_f8_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f8le_fn(**kwargs) -> str:
+    def gen_f8le_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_f8be_fn(**kwargs) -> str:
+    def gen_f8be_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_str_fn(**kwargs) -> str:
+    def gen_str_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     @staticmethod
-    def gen_strz_fn(**kwargs) -> str:
+    def gen_strz_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
     def generate_code(self) -> None:
         raise NotImplementedError
 
     @classmethod
-    def get_gen_type_fn(cls, key):
+    def get_gen_type_fn(cls, key: Union[str, None]) -> Callable[[dict[str, Any]], str]:
         TYPE_TO_FN_MAP = {
             None: cls.gen_bytes_fn,
             "u1": cls.gen_u1_fn,
