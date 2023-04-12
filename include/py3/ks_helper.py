@@ -1,5 +1,5 @@
 from random import Random
-import time
+from typing import Any, Optional
 
 
 UTF8_CODEPOINT_MIN_RANGE = 0
@@ -18,11 +18,11 @@ ENABLE_UTF8_SURROGATE = False  # Must be False since Python cannot encode surrog
 
 
 class KsHelper:
-    def __init__(self, seed=time.time_ns()):
+    def __init__(self, seed: Any = None) -> None:
         self.rng = Random(seed)
 
     @staticmethod
-    def _utf8_byte_size(codepoint):
+    def _utf8_byte_size(codepoint: int) -> int:
         if codepoint < UTF8_CODEPOINT_MIN_RANGE or codepoint > UTF8_CODEPOINT_MAX_RANGE:
             raise ValueError("UTF-8 codepoint out of range")
         if codepoint <= UTF8_CODEPOINT_ONE_BYTE_MAX_RANGE:
@@ -35,12 +35,18 @@ class KsHelper:
             return 4
         raise ValueError("UTF-8 codepoint out of range")
 
-    def rand_bytes(self, n_bytes):
+    def rand_bytes(self, n_bytes: int) -> bytes:
         return self.rng.randbytes(n_bytes)
 
-    def rand_utf8(self, n_bytes):
+    def rand_utf8(self, n_bytes: int, terminator: Optional[str] = None) -> bytes:
+        if n_bytes <= 0:
+            raise ValueError("Number of bytes must be at least 1.")
         ret = ""
         bytes_remaining = n_bytes
+        if terminator is not None:
+            bytes_remaining -= len(terminator.encode(encoding="utf-8"))
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into specified number of bytes.")
         while bytes_remaining > 0:
             if bytes_remaining == 1:
                 code_point = self.rng.randint(
@@ -55,9 +61,13 @@ class KsHelper:
                 code_point = self.rng.randint(
                     UTF8_CODEPOINT_MIN_RANGE, UTF8_CODEPOINT_MAX_RANGE)
 
-            if not ENABLE_UTF8_SURROGATE and code_point >= UTF8_CODEPOINT_SURROGATE_MIN_RANGE and code_point <= UTF8_CODEPOINT_SURROGATE_MAX_RANGE:
+            if (not ENABLE_UTF8_SURROGATE
+                    and code_point >= UTF8_CODEPOINT_SURROGATE_MIN_RANGE
+                    and code_point <= UTF8_CODEPOINT_SURROGATE_MAX_RANGE):
                 continue
 
             ret += chr(code_point)
             bytes_remaining -= KsHelper._utf8_byte_size(code_point)
+        if terminator is not None:
+            ret += terminator
         return ret.encode(encoding="utf-8")
