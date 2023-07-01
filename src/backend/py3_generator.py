@@ -1,9 +1,10 @@
-from generator import Generator
+from backend.generator import Generator
 import string
 from typing import Any
+import os
 
 
-KS_HELPER_SRC_PATH = "include/py3/ks_helper.py"
+KS_HELPER_SRC_PATH = os.path.join(os.path.dirname(__file__), "include", "py3", "ks_helper.py")
 
 
 class Python3Generator(Generator):
@@ -16,10 +17,6 @@ class Python3Generator(Generator):
         self.seq = seq
         with open(KS_HELPER_SRC_PATH, "r") as f:
             self.ks_helper_src = f.read()
-
-    @staticmethod
-    def _get_ks_helper_fn_call(fn_name: str) -> str:
-        return f"{Python3Generator.KS_HELPER_INSTANCE}.{fn_name}"
 
     @staticmethod
     def gen_bytes_fn(**kwargs: dict[str, Any]) -> str:
@@ -240,8 +237,8 @@ class Python3Generator(Generator):
                 result += f"self.gen_{fn_name}()\n"
                 first_entry = False
             else:
-                result += f"        + self.gen_{fn_name}()\n"
-        result += "        )"
+                result += f"                + self.gen_{fn_name}()\n"
+        result += "                )\n"
         return result
 
     def generate_fns(self) -> str:
