@@ -6,6 +6,7 @@ on:
 
 env:
   SOURCE_CODE_DIR: src
+  TEST_DIR: tests
 
 jobs:
   lint:
@@ -45,4 +46,4 @@ jobs:
           pip install pytest
       - name: Test with pytest
         run: |
-          pytest
+          pytest $TEST_DIR

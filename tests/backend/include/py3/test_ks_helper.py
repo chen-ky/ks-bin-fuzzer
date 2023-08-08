@@ -1,3 +1,6 @@
+import sys, os
+sys.path.insert(0, os.getcwd())
+
 from src.backend.include.py3.ks_helper import KsHelper
 
 
