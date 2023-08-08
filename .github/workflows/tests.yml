@@ -45,4 +45,4 @@ jobs:
           pip install pytest
       - name: Test with pytest
         run: |
-          pytest $SOURCE_CODE_DIR
+          pytest
