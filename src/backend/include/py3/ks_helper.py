@@ -1,5 +1,5 @@
 from random import Random
-from typing import Any, Optional
+from typing import Any, Optional, Literal
 
 
 UTF8_CODEPOINT_MIN_RANGE = 0
@@ -36,7 +36,14 @@ class KsHelper:
         raise ValueError("UTF-8 codepoint out of range")
 
     def rand_bytes(self, n_bytes: int) -> bytes:
-        return self.rng.randbytes(n_bytes)
+        result = bytes()
+        C_INT_MAX = 65536
+        remaining_bytes = n_bytes
+        # Workaround for n_bytes that is larger than C int
+        while remaining_bytes > 0:
+            result += self.rng.randbytes(C_INT_MAX if remaining_bytes > C_INT_MAX else remaining_bytes)
+            remaining_bytes -= C_INT_MAX
+        return result
 
     def rand_utf8(self, n_bytes: int, terminator: Optional[str] = None) -> bytes:
         if n_bytes <= 0:
@@ -71,3 +78,28 @@ class KsHelper:
         if terminator is not None:
             ret += terminator
         return ret.encode(encoding="utf-8")
+    
+    @staticmethod
+    def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
+        return int.from_bytes(b, endian, signed=False)
+
+    @staticmethod
+    def bytes_to_int(b: bytes, endian: Literal["big", "little"]) -> int:
+        return int.from_bytes(b, endian, signed=True)
+
+    @staticmethod
+    def replace_bytes(b_new: bytes, b_original: bytes, start_loc: int) -> bytes:
+        """
+        Replace the bytes at `start_loc` of `b_original` with `b_new`.
+
+        If `start_loc` is larger than or equal to the length of `b_original`, 
+        it will append `b_new` at the end of `b_original`.
+
+        If `b_new` has a length that is longer than the remaining length of
+        `b_original` at `start_loc`, it will replace and then extend `b_original`.
+        """
+        if start_loc < 0:
+            raise ValueError("Byte start location cannot be negative.")
+        first_half = b_original[:start_loc]
+        last_half = b_original[start_loc + len(b_new):]
+        return first_half + b_new + last_half
