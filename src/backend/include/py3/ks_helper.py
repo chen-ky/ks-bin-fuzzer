@@ -36,6 +36,8 @@ class KsHelper:
         raise ValueError("UTF-8 codepoint out of range")
 
     def rand_bytes(self, n_bytes: int) -> bytes:
+        if n_bytes <= 0:
+            raise ValueError("Number of bytes must be at least 1.")
         result = bytes()
         C_INT_MAX = 65536
         remaining_bytes = n_bytes
@@ -78,7 +80,7 @@ class KsHelper:
         if terminator is not None:
             ret += terminator
         return ret.encode(encoding="utf-8")
-    
+
     @staticmethod
     def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
         return int.from_bytes(b, endian, signed=False)
@@ -103,3 +105,20 @@ class KsHelper:
         first_half = b_original[:start_loc]
         last_half = b_original[start_loc + len(b_new):]
         return first_half + b_new + last_half
+
+    @staticmethod
+    def inplace_replace_bytes(b_new: bytes | bytearray, b_original: bytearray, start_loc: int) -> bytes:
+        if len(b_new) <= 0:
+            return b_original
+        if start_loc > len(b_original):
+            start_loc = len(b_original)
+
+        for i, b in enumerate(b_new):
+            if start_loc < len(b_original):
+                b_original[start_loc] = b
+            else:
+                # Insert all at once and exit loop
+                b_original += b_new[i:]
+                break
+            start_loc += 1
+        return b_original
