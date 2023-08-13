@@ -45,7 +45,13 @@ class IndenterTest(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     def test_negative_indentation(self):
-        self.assertRaises(ValueError, Indenter, indentation=-1, indent_char=" ")
+        indenter = Indenter(indentation=-1, indent_char=" ")
+        expected_output = ["test str", "another one"]
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
+        indenter.indent()
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
 
     def test_custom_indent_char(self):
         indenter = Indenter(indentation=1, indent_char="\t")
