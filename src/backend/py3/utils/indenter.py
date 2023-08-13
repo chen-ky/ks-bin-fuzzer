@@ -4,6 +4,8 @@ from typing import List
 class Indenter():
 
     def __init__(self, indentation: int = 4, indent_char: str = " ") -> None:
+        if indentation < 0:
+            raise ValueError("Indentation cannot be less than 0")
         self.indentation = indentation
         self.indent_char = indent_char
         self.indent_level = 0
