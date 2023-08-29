@@ -81,6 +81,40 @@ class KsHelper:
             ret += terminator
         return ret.encode(encoding="utf-8")
 
+    def rand_ascii(self, n_bytes: int, terminator: Optional[str] = None) -> bytes:
+        encoding = "ascii"
+        if n_bytes <= 0:
+            raise ValueError("Number of bytes must be at least 1.")
+        ret = b""
+        bytes_remaining = n_bytes
+        if terminator is not None:
+            bytes_remaining -= len(terminator.encode(encoding=encoding))
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into specified number of bytes.")
+        b_length = 1
+        while bytes_remaining > 0:
+            code_point = self.rng.randint(0, 127)
+            ret += int.to_bytes(code_point, length=b_length)
+            bytes_remaining -= b_length
+        if terminator is not None:
+            ret += terminator.encode(encoding=encoding)
+        return ret
+
+    def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[str] = None):
+        if n_bytes <= 0:
+            raise ValueError("Number of bytes must be at least 1.")
+        if not encoding.lower().startswith("iso8859"):
+            raise ValueError("Invalid ISO 8859 encoding type.")
+        bytes_remaining = n_bytes
+        if terminator is not None:
+            bytes_remaining -= len(terminator.encode(encoding=encoding))
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into specified number of bytes.")
+        ret = self.rand_bytes(bytes_remaining)
+        if terminator is not None:
+            ret += terminator.encode(encoding=encoding)
+        return ret
+
     @staticmethod
     def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
         return int.from_bytes(b, endian, signed=False)
@@ -122,3 +156,14 @@ class KsHelper:
                 break
             start_loc += 1
         return b_original
+
+    @staticmethod
+    def extract_bytes(b: bytes | bytearray, start_end_pos: tuple[int, int]):
+        start_pos, end_pos = start_end_pos
+        if start_pos == -1 and end_pos == -1:
+            return b[:]
+        if start_pos == -1:
+            return b[:end_pos]
+        if end_pos == -1:
+            return b[:start_pos]
+        return b[start_pos:end_pos]
