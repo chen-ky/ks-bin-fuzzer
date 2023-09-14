@@ -115,6 +115,9 @@ class KsHelper:
             ret += terminator.encode(encoding=encoding)
         return ret
 
+    def rand_int(self, start: int = -32767, end: int = 32767) -> int:
+        return self.rng.randint(start, end)
+
     @staticmethod
     def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
         return int.from_bytes(b, endian, signed=False)
