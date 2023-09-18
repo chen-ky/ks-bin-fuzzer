@@ -1,7 +1,10 @@
-from typing import List
-from backend.py3_generator import Python3Generator
-import yaml
 import sys
+from frontend.frontend import Frontend
+from typing import List
+
+import yaml
+
+from backend.py3_generator import Python3Generator
 
 ARGC_MIN = 2
 
@@ -11,12 +14,14 @@ def main(argv: List[str]) -> int:
         print("Please provide a .ksy file.", file=sys.stderr)
         return 1
     ksy_file_path = argv[1]
-    ks_specification = None
+    ksy_source = None
     with open(ksy_file_path, "r") as f:
-        ks_specification = yaml.safe_load(f)
-    # print(ks_specification)
-    code_gen = Python3Generator(ks_specification["meta"]["id"], ks_specification["seq"])
-    code_gen.generate_code()
+        ksy_source = yaml.safe_load(f)
+    frontend = Frontend(ksy_source)
+    ir = frontend.generate_ir()
+    # code_gen = Python3Generator(ksy_source["meta"]["id"], ksy_source["seq"], ir.source) #TODO
+    # code_gen.generate_code()
+    return 0
 
 
 if "__main__" == __name__:
