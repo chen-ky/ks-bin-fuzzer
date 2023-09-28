@@ -1,5 +1,5 @@
 import unittest
-from src.backend.py3.include.seekable_buffer import SeekableBuffer
+from backend.py3.include import SeekableBuffer
 
 
 class TestSeekableBuffer(unittest.TestCase):

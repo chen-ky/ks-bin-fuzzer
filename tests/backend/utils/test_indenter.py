@@ -1,5 +1,5 @@
 import unittest
-from src.backend.utils.indenter import Indenter
+from backend.utils.indenter import Indenter
 
 
 class IndenterTest(unittest.TestCase):

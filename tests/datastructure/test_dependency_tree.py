@@ -1,5 +1,5 @@
 import unittest
-from src.datastructure.dependency_tree import DependencyTreeNode
+from datastructure.dependency_tree import DependencyTreeNode
 
 
 class TestDependencyTree(unittest.TestCase):

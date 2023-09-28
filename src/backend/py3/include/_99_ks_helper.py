@@ -43,7 +43,8 @@ class KsHelper:
         remaining_bytes = n_bytes
         # Workaround for n_bytes that is larger than C int
         while remaining_bytes > 0:
-            result += self.rng.randbytes(C_INT_MAX if remaining_bytes > C_INT_MAX else remaining_bytes)
+            result += self.rng.randbytes(C_INT_MAX if remaining_bytes >
+                                         C_INT_MAX else remaining_bytes)
             remaining_bytes -= C_INT_MAX
         return result
 
@@ -55,7 +56,8 @@ class KsHelper:
         if terminator is not None:
             bytes_remaining -= len(terminator.encode(encoding="utf-8"))
             if bytes_remaining < 0:
-                raise ValueError("Terminator cannot fit into specified number of bytes.")
+                raise ValueError(
+                    "Terminator cannot fit into specified number of bytes.")
         while bytes_remaining > 0:
             if bytes_remaining == 1:
                 code_point = self.rng.randint(
@@ -90,7 +92,8 @@ class KsHelper:
         if terminator is not None:
             bytes_remaining -= len(terminator.encode(encoding=encoding))
             if bytes_remaining < 0:
-                raise ValueError("Terminator cannot fit into specified number of bytes.")
+                raise ValueError(
+                    "Terminator cannot fit into specified number of bytes.")
         b_length = 1
         while bytes_remaining > 0:
             code_point = self.rng.randint(0, 127)
@@ -109,7 +112,8 @@ class KsHelper:
         if terminator is not None:
             bytes_remaining -= len(terminator.encode(encoding=encoding))
             if bytes_remaining < 0:
-                raise ValueError("Terminator cannot fit into specified number of bytes.")
+                raise ValueError(
+                    "Terminator cannot fit into specified number of bytes.")
         ret = self.rand_bytes(bytes_remaining)
         if terminator is not None:
             ret += terminator.encode(encoding=encoding)

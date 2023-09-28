@@ -1,5 +1,5 @@
 import unittest
-from src.backend.py3.include.ks_helper import KsHelper
+from backend.py3.include import KsHelper
 
 
 class TestKsHelper(unittest.TestCase):
