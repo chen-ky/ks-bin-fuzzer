@@ -4,10 +4,6 @@ from typing import Any, Callable, Union
 class Generator:
 
     @staticmethod
-    def _get_ks_helper_fn_call(fn_name: str) -> str:
-        return f"{Generator.KS_HELPER_INSTANCE}.{fn_name}"
-
-    @staticmethod
     def gen_bytes_fn(**kwargs: dict[str, Any]) -> str:
         raise NotImplementedError
 
