@@ -12,7 +12,7 @@ class IndenterTest(unittest.TestCase):
     def test_increase_indentation(self):
         indenter = Indenter(indentation=4, indent_char=" ")
         expected_output = ["test str", "another one"]
-        result = indenter.apply("test str\nanother one")
+        result = indenter.apply(["test str", "another one"])
         self.assertEqual(result, expected_output)
         indenter.indent()
         expected_output = ["    test str", "    another one"]
@@ -87,6 +87,31 @@ class IndenterTest(unittest.TestCase):
         result = indenter.apply("test str\nanother one")
         self.assertEqual(result, expected_output)
         indenter.unindent()
+        expected_output = ["\ttest str", "\tanother one"]
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
+
+    def test_reset_indent(self):
+        indenter = Indenter(indentation=1, indent_char="\t")
+        indenter.indent()
+        indenter.indent()
+        expected_output = ["\t\ttest str", "\t\tanother one"]
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
+        indenter.reset()
+        expected_output = ["test str", "another one"]
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
+
+    def test_indent_after_reset(self):
+        indenter = Indenter(indentation=1, indent_char="\t")
+        indenter.indent()
+        indenter.indent()
+        indenter.reset()
+        expected_output = ["test str", "another one"]
+        result = indenter.apply("test str\nanother one")
+        self.assertEqual(result, expected_output)
+        indenter.indent()
         expected_output = ["\ttest str", "\tanother one"]
         result = indenter.apply("test str\nanother one")
         self.assertEqual(result, expected_output)
