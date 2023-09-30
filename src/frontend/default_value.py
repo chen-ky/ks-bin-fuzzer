@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, List
+from utils.types import BaseObject, SeqEntry
 import math
 
 VALID_INT_TYPE_VAL = ["u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u8le",
@@ -47,16 +48,21 @@ class DefaultValuePopulator():
     def _register_default_handler(self):
         default_handler = {
             "meta": self.handle_meta,
-            "seq": self.handle_seq
+            "seq": self.handle_seq,
+            "types": self.handle_types
         }
         for k, v in default_handler.items():
             self.key_handler.setdefault(k, v)
 
+    def handle_base_object(self, val: BaseObject):
+        val.setdefault("types", [])
+
     def handle_meta(self, val):
         pass
 
-    def handle_seq(self, val):
-        print(val)
+    def handle_seq(self, val: List[SeqEntry]):
+        """Populate the `seq` key content with default value
+        """
         for entry in val:
             self.handle_seq_entry(entry)
 
@@ -74,7 +80,11 @@ class DefaultValuePopulator():
             elif t in VALID_STR_TYPE_VAL:
                 raise NotImplementedError
 
+    def handle_types(self, val):
+        pass
+
     def populate_default(self):
+        self.handle_base_object(self.source)
         for k, v in self.source.items():
             fn = self.key_handler[k]
             fn(v)
