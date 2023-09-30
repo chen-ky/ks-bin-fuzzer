@@ -19,7 +19,6 @@ def sanitise_class_name(class_name: str) -> str:
     return result
 
 
-@staticmethod
 def sanitise_fn_name(fn_name: str) -> str:
     """
     Clean provided string to be used as function name. Will remove
