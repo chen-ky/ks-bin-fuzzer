@@ -1,4 +1,5 @@
 from random import Random
+import struct
 from typing import Any, Optional, Literal
 
 
@@ -121,6 +122,12 @@ class KsHelper:
 
     def rand_int(self, start: int = -32767, end: int = 32767) -> int:
         return self.rng.randint(start, end)
+
+    def rand_float(self) -> float:
+        return struct.unpack("=f", self.rand_bytes(4))[0]
+
+    def rand_double(self) -> float:
+        return struct.unpack("=d", self.rand_bytes(8))[0]
 
     @staticmethod
     def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:

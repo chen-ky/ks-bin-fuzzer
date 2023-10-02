@@ -9,3 +9,7 @@ seq:
     type: u1
   - id: num_1
     type: u2
+  - id: float_0
+    type: f8
+  - id: num_2
+    type: s2

@@ -106,35 +106,37 @@ class BaseTypeCodeGenerator():
     def gen_s8be_fn(self, start: int = const.s8_MIN, end: int = const.s8_MAX) -> str:
         return self.gen_s8_fn(start=start, end=end)
 
-    @staticmethod
-    def gen_f4_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f4_fn(self, start: float = const.f4_MIN, end: float = const.f4_MAX) -> str:
+        # TODO Does not actually support range generation
+        if start < const.f4_MIN or end > const.f4_MAX:
+            raise ValueError("Provided value is out of f4 range")
+        fn_name = "rand_float"
+        fn_args = "()"
+        return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
-    @staticmethod
-    def gen_f4le_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f4le_fn(self, start: float = const.f4_MIN, end: float = const.f4_MAX) -> str:
+        return self.gen_f4_fn(start=start, end=end)
 
-    @staticmethod
-    def gen_f4be_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f4be_fn(self, start: float = const.f4_MIN, end: float = const.f4_MAX) -> str:
+        return self.gen_f4_fn(start=start, end=end)
 
-    @staticmethod
-    def gen_f8_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f8_fn(self, start: float = const.f8_MIN, end: float = const.f8_MAX) -> str:
+        # TODO Does not actually support range generation
+        if start < const.f8_MIN or end > const.f8_MAX:
+            raise ValueError("Provided value is out of f8 range")
+        fn_name = "rand_double"
+        fn_args = "()"
+        return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
-    @staticmethod
-    def gen_f8le_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f8le_fn(self, start: float = const.f8_MIN, end: float = const.f8_MAX) -> str:
+        return self.gen_f8_fn(start=start, end=end)
 
-    @staticmethod
-    def gen_f8be_fn(self, start: int = 0, end: int = 4294967295) -> str:
-        raise NotImplementedError
+    def gen_f8be_fn(self, start: float = const.f8_MIN, end: float = const.f8_MAX) -> str:
+        return self.gen_f8_fn(start=start, end=end)
 
-    @staticmethod
     def gen_str_fn(**kwargs) -> str:
         raise NotImplementedError
 
-    @staticmethod
     def gen_strz_fn(**kwargs) -> str:
         raise NotImplementedError
 
