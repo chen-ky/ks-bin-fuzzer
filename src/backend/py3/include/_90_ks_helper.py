@@ -43,8 +43,8 @@ class KsHelper:
         remaining_bytes = n_bytes
         # Workaround for n_bytes that is larger than C int
         while remaining_bytes > 0:
-            result += self.rng.randbytes(C_INT_MAX if remaining_bytes >
-                                         C_INT_MAX else remaining_bytes)
+            result += self.rng.randbytes(C_INT_MAX if remaining_bytes
+                                         > C_INT_MAX else remaining_bytes)
             remaining_bytes -= C_INT_MAX
         return result
 
@@ -135,7 +135,7 @@ class KsHelper:
         """
         Replace the bytes at `start_loc` of `b_original` with `b_new`.
 
-        If `start_loc` is larger than or equal to the length of `b_original`, 
+        If `start_loc` is larger than or equal to the length of `b_original`,
         it will append `b_new` at the end of `b_original`.
 
         If `b_new` has a length that is longer than the remaining length of

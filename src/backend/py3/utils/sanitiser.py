@@ -4,7 +4,7 @@ import string
 def sanitise_class_name(class_name: str) -> str:
     """
     Clean provided string to be used as class name. Will remove
-    whitespace, punctuations (excluding `_`) and convert the name to 
+    whitespace, punctuations (excluding `_`) and convert the name to
     titlecase.
 
     :param class_name: String to sanitise
@@ -22,7 +22,7 @@ def sanitise_class_name(class_name: str) -> str:
 def sanitise_fn_name(fn_name: str) -> str:
     """
     Clean provided string to be used as function name. Will remove
-    whitespace, punctuations (excluding `_`) and convert the name to 
+    whitespace, punctuations (excluding `_`) and convert the name to
     lowercase.
 
     :param fn_name: String to sanitise
