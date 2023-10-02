@@ -1,5 +1,6 @@
 from typing import Any, List
 from utils.types import BaseObject, SeqEntry
+from utils import const
 import math
 
 VALID_INT_TYPE_VAL = ["u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u8le",
@@ -23,21 +24,21 @@ class DefaultValuePopulator():
         """
         match type_key:
             case "u1":
-                return (0, 255)
+                return (const.u1_MIN, const.u1_MAX)
             case "u2" | "u2le" | "u2be":
-                return (0, 65535)
+                return (const.u2_MIN, const.u2_MAX)
             case "u4" | "u4le" | "u4be":
-                return (0, 4294967295)
+                return (const.u4_MIN, const.u4_MAX)
             case "u8" | "u8le" | "u8be":
-                return (0, 18446744073709551615)
+                return (const.u8_MIN, const.u8_MAX)
             case "s1":
-                return (-128, 127)
+                return (const.s1_MIN, const.s1_MAX)
             case "s2" | "s2le" | "s2be":
-                return (-32768, 32767)
+                return (const.s2_MIN, const.s2_MAX)
             case "s4" | "s4le" | "s4be":
-                return (-2147483648, 2147483647)
+                return (const.s4_MIN, const.s4_MAX)
             case "s8" | "s8le" | "s8be":
-                return (-9223372036854775808, 9223372036854775807)
+                return (const.s8_MIN, const.s8_MAX)
             case _:
                 raise ValueError("Not a valid integer type")
 
