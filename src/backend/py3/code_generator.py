@@ -142,6 +142,18 @@ class Python3CodeGenerator(Generator):
                 case "s8be":
                     indenter.append_line(
                         f"result.append(struct.pack('>q', {entry_name}))", code)
+                case "f4le":
+                    indenter.append_line(
+                        f"result.append(struct.pack('<f', {entry_name}))", code)
+                case "f4be":
+                    indenter.append_line(
+                        f"result.append(struct.pack('>f', {entry_name}))", code)
+                case "f8le":
+                    indenter.append_line(
+                        f"result.append(struct.pack('<d', {entry_name}))", code)
+                case "f8be":
+                    indenter.append_line(
+                        f"result.append(struct.pack('>d', {entry_name}))", code)
                 case _:
                     raise NotImplementedError  # TODO
         code.extend(indenter.apply([
