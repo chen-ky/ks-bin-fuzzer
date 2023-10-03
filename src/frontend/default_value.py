@@ -2,6 +2,7 @@ from typing import Any, List
 from utils.types import BaseObject, SeqEntry
 from utils import const
 import math
+import sys
 
 VALID_INT_TYPE_VAL = ["u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u8le",
                       "u8be", "s1", "s2", "s2le", "s2be", "s4", "s4le", "s4be", "s8", "s8le", "s8be"]
@@ -59,7 +60,8 @@ class DefaultValuePopulator():
         val.setdefault("types", [])
 
     def handle_meta(self, val):
-        pass
+        # Default to system endian if not specified
+        val.setdefault("endian", "be" if sys.byteorder == "big" else "le")
 
     def handle_seq(self, val: List[SeqEntry]):
         """Populate the `seq` key content with default value
@@ -68,6 +70,7 @@ class DefaultValuePopulator():
             self.handle_seq_entry(entry)
 
     def handle_seq_entry(self, val):
+        val.setdefault("type", None)  # Generate bytes if not specified
         if "type" in val:
             t = val["type"]
             if t in VALID_INT_TYPE_VAL:
