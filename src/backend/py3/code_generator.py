@@ -86,15 +86,13 @@ class Python3CodeGenerator(Generator):
         ])
         indenter.indent(add_indent=2)
         for seq_entry in seq:
-            code.extend(indenter.apply(self.generate_seq_entry(seq_entry)))
+            indenter.append_lines(self.generate_seq_entry(seq_entry), code)
         code.append("\n")
         indenter.unindent()
-        code.extend(
-            indenter.apply([
-                "def generate(self) -> bytes:",
-                "    result = SeekableBuffer()"
-            ])
-        )
+        indenter.append_lines([
+            "def generate(self) -> bytes:",
+            "    result = SeekableBuffer()"
+        ], code)
         indenter.indent()
         for seq_entry in seq:
             entry_name = f"self.{seq_entry['id']}"  # FIXME sanitise name?
@@ -156,10 +154,11 @@ class Python3CodeGenerator(Generator):
                         f"result.append(struct.pack('>d', {entry_name}))", code)
                 case _:
                     raise NotImplementedError  # TODO
-        code.extend(indenter.apply([
+        indenter.append_lines([
             "result.seek(0)",  # Move pointer to start
             "return result.get_data()",  # Return bytes using pointer
-        ]))
+        ], code)
+        indenter.reset()
         indenter.append_line("\n", code)
         return code
 
