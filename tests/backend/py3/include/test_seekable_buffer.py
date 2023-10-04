@@ -1,6 +1,11 @@
 import unittest
 from backend.py3.include import SeekableBuffer
 
+# IntelliSense
+import sys
+import os
+sys.path.insert(0, os.path.join(os.getcwd(), "src"))  # Include src dir to sys.path
+
 
 class TestSeekableBuffer(unittest.TestCase):
     def test_init_custom_data(self):
@@ -135,3 +140,68 @@ class TestSeekableBuffer(unittest.TestCase):
         buf.seek(len(buf) + 1)
         self.assertTrue(buf.is_eos())
         self.assertEqual(b"", buf.get_data())
+
+    def test_move_data_left(self):
+        data = b"0123456789\n"
+        expected_data = b"123456789\n\0"
+        ptr_pos = 1
+        offset = -1
+        buf = SeekableBuffer()
+        buf.append(data)
+        buf.seek(ptr_pos)
+        buf._move_data(offset)
+        self.assertEqual(ptr_pos, buf.ptr)
+        buf.seek(0)
+        self.assertEqual(expected_data, buf.get_data())
+
+    def test_move_data_right(self):
+        data = b"0123456789\n"
+        expected_data = b"0\0\0\0\0\0" + b"12345"
+        ptr_pos = 1
+        offset = 5
+        buf = SeekableBuffer()
+        buf.append(data)
+        buf.seek(ptr_pos)
+        buf._move_data(offset)
+        self.assertEqual(ptr_pos, buf.ptr)
+        buf.seek(0)
+        self.assertEqual(expected_data, buf.get_data())
+
+    def test_move_data_left_no_null(self):
+        data = b"0123456789\n"
+        expected_data = b"23456789\n9\n"
+        ptr_pos = 2
+        offset = -2
+        buf = SeekableBuffer()
+        buf.append(data)
+        buf.seek(ptr_pos)
+        buf._move_data(offset, write_null_bytes=False)
+        self.assertEqual(ptr_pos, buf.ptr)
+        buf.seek(0)
+        self.assertEqual(expected_data, buf.get_data())
+
+    def test_move_data_right_no_null(self):
+        data = b"0123456789\n"
+        expected_data = b"01234512345"
+        ptr_pos = 1
+        offset = 5
+        buf = SeekableBuffer()
+        buf.append(data)
+        buf.seek(ptr_pos)
+        buf._move_data(offset, write_null_bytes=False)
+        self.assertEqual(ptr_pos, buf.ptr)
+        buf.seek(0)
+        self.assertEqual(expected_data, buf.get_data())
+
+    def test_move_data_zero_offset(self):
+        data = b"0123456789\n"
+        expected_data = b"0123456789\n"
+        ptr_pos = 1
+        offset = 0
+        buf = SeekableBuffer()
+        buf.append(data)
+        buf.seek(ptr_pos)
+        buf._move_data(offset)
+        self.assertEqual(ptr_pos, buf.ptr)
+        buf.seek(0)
+        self.assertEqual(expected_data, buf.get_data())

@@ -21,10 +21,46 @@ class SeekableBuffer():
         self.end_pos = end_pos
         self.ptr = self.start_pos
 
+    def _grow_buf(self, n_bytes: int) -> None:
+        if self.is_subbuffer():
+            raise BufferError("Sub-buffer cannot be grown")
+        self.data.extend(b"\0" * n_bytes)
+        self.end_pos += n_bytes
+
+    def _move_data(self, offset: int, write_null_bytes: bool = True) -> None:
+        """Move data on and after the pointer by an offset, will not change the pointer position.
+
+        :param offset: To move to the right, specify a positive offset. To move to the left, specify a negative offset.
+        :param write_null_bytes: Write null bytes to region that is originally occupied by the data
+
+        :raises ValueError: Invalid offset
+        """
+        if offset == 0:
+            return
+        elif self.ptr + offset < self.start_pos:
+            raise ValueError("Cannot move data beyond the start of the buffer")
+        data_to_move = self.data[self.ptr:]
+        for i, b in enumerate(data_to_move):
+            if self.ptr + offset + i >= self.end_pos:
+                break
+            self.data[self.ptr + offset + i] = b
+        if write_null_bytes:
+            if offset > 0:
+                for i in range(self.ptr, self.ptr + offset):
+                    self.data[i] = 0
+            else:
+                for i in range(self.end_pos + offset, self.end_pos):
+                    self.data[i] = 0
+
     def append(self, buffer: bytes | bytearray):
         # FIXME does not take into account ptr
         self.data += buffer
         self.end_pos += len(buffer)
+
+    def write(self, buffer: bytes | bytearray):
+        # TODO
+        for b in buffer:
+            pass
 
     def get_data(self, n_bytes: Optional[int] = None):
         """Get data using the pointer"""
@@ -44,6 +80,10 @@ class SeekableBuffer():
 
     def is_eos(self) -> bool:
         return self.ptr == self.end_pos
+
+    def is_subbuffer(self) -> bool:
+        # Not sub buffer if length is equal to underlying data length
+        return len(self) != len(self.data)
 
     def seek(self, offset: int) -> None:
         """Set pointer be at an offset relative to the start of the buffer"""
