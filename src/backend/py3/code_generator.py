@@ -77,7 +77,7 @@ class Python3CodeGenerator(Generator):
 
     def generate_class(self, class_name: str, seq: List[SeqEntry]) -> List[str]:
         class_name = sanitiser.sanitise_class_name(class_name)
-        self.logger.debug(class_name)
+        self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
         code = indenter.apply([
             f"class {class_name}():",
@@ -164,12 +164,12 @@ class Python3CodeGenerator(Generator):
         ], code)
         indenter.reset()
         indenter.append_line("\n", code)
+        self.logger.debug(f"Done generating class \"{class_name}\"")
         return code
 
     def generate_seq_entry(self, seq_entry: SeqEntry) -> List[str]:
         entry_name = f"{seq_entry['id']}"  # FIXME sanitise name?
-        entry_type = seq_entry["type"]
-        self.logger.debug(entry_name)
+        self.logger.debug(f"Generating seq entry \"{entry_name}\"")
         indenter = Indenter(add_newline=True)
         code = indenter.apply([
             f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
