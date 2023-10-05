@@ -51,18 +51,32 @@ class DefaultValuePopulator():
     def _register_default_handler(self):
         default_handler = {
             "meta": self.handle_meta,
+            "doc": self.handle_doc,
+            "doc-ref": self.handle_doc_ref,
             "seq": self.handle_seq,
-            "types": self.handle_types
+            "types": self.handle_types,
+            "instances": self.handle_instances,
+            "enums": self.handle_enums,
         }
         for k, v in default_handler.items():
             self.key_handler.setdefault(k, v)
 
     def handle_base_object(self, val: BaseObject):
+        val.setdefault("doc", "")
+        val.setdefault("doc-ref", "")
         val.setdefault("types", [])
+        val.setdefault("instances", dict())
+        val.setdefault("enums", dict())
 
-    def handle_meta(self, val):
+    def handle_meta(self, val) -> None:
         # Default to system endian if not specified
         val.setdefault("endian", "be" if sys.byteorder == "big" else "le")
+
+    def handle_doc(self, val) -> None:
+        pass
+
+    def handle_doc_ref(self, val) -> None:
+        pass
 
     def handle_seq(self, val: List[SeqEntry]):
         """Populate the `seq` key content with default value
@@ -90,6 +104,12 @@ class DefaultValuePopulator():
                 val.setdefault("size", -1)
 
     def handle_types(self, val):
+        pass
+
+    def handle_instances(self, val):
+        pass
+
+    def handle_enums(self, val):
         pass
 
     def populate_default(self):
