@@ -8,6 +8,7 @@ VALID_INT_TYPE_VAL = ["u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u
                       "u8be", "s1", "s2", "s2le", "s2be", "s4", "s4le", "s4be", "s8", "s8le", "s8be"]
 VALID_FLOAT_TYPE_VAL = ["f4", "f4le", "f4be", "f8", "f8le", "f8be"]
 VALID_STR_TYPE_VAL = ["str", "strz"]
+VALID_BYTE_TYPE_VAL = [None,]
 
 
 class DefaultValuePopulator():
@@ -83,6 +84,9 @@ class DefaultValuePopulator():
                 val.setdefault("-fz-range-max", max_val)
             elif t in VALID_STR_TYPE_VAL:
                 raise NotImplementedError
+            elif t in VALID_BYTE_TYPE_VAL:
+                val.setdefault("contents", None)
+                val.setdefault("size", -1)
 
     def handle_types(self, val):
         pass

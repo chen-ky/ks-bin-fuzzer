@@ -152,8 +152,12 @@ class Python3CodeGenerator(Generator):
                 case "f8be":
                     indenter.append_line(
                         f"result.append(struct.pack('>d', {entry_name}))", code)
+                # case None:
                 case _:
-                    raise NotImplementedError  # TODO
+                    # raise NotImplementedError  # TODO
+                    indenter.append_line(
+                        f"result.append({entry_name})", code
+                    )
         indenter.append_lines([
             "result.seek(0)",  # Move pointer to start
             "return result.get_data()",  # Return bytes using pointer
@@ -168,7 +172,7 @@ class Python3CodeGenerator(Generator):
         self.logger.debug(entry_name)
         indenter = Indenter(add_newline=True)
         code = indenter.apply([
-            f"self.{entry_name} = {self.base_type_code_generator.get_gen_type_fn(entry_type)(start=seq_entry['-fz-range-min'], end=seq_entry['-fz-range-max'])}  # TODO",
+            f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
         ])
         return code
 
