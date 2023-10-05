@@ -49,16 +49,13 @@ class KsHelper:
             remaining_bytes -= C_INT_MAX
         return result
 
-    def rand_utf8(self, n_bytes: int, terminator: Optional[str] = None) -> bytes:
+    def rand_utf8(self, n_bytes: int, terminator: Optional[bytes] = None) -> str:
         if n_bytes <= 0:
             raise ValueError("Number of bytes must be at least 1.")
         ret = ""
         bytes_remaining = n_bytes
         if terminator is not None:
-            bytes_remaining -= len(terminator.encode(encoding="utf-8"))
-            if bytes_remaining < 0:
-                raise ValueError(
-                    "Terminator cannot fit into specified number of bytes.")
+            bytes_remaining -= 1
         while bytes_remaining > 0:
             if bytes_remaining == 1:
                 code_point = self.rng.randint(
@@ -81,44 +78,38 @@ class KsHelper:
             ret += chr(code_point)
             bytes_remaining -= KsHelper._utf8_byte_size(code_point)
         if terminator is not None:
-            ret += terminator
-        return ret.encode(encoding="utf-8")
+            ret += terminator.decode(encoding="utf-8")
+        return ret
 
-    def rand_ascii(self, n_bytes: int, terminator: Optional[str] = None) -> bytes:
+    def rand_ascii(self, n_bytes: int, terminator: Optional[bytes] = None) -> str:
         encoding = "ascii"
         if n_bytes <= 0:
             raise ValueError("Number of bytes must be at least 1.")
         ret = b""
         bytes_remaining = n_bytes
         if terminator is not None:
-            bytes_remaining -= len(terminator.encode(encoding=encoding))
-            if bytes_remaining < 0:
-                raise ValueError(
-                    "Terminator cannot fit into specified number of bytes.")
+            bytes_remaining -= 1
         b_length = 1
         while bytes_remaining > 0:
             code_point = self.rng.randint(0, 127)
             ret += int.to_bytes(code_point, length=b_length)
             bytes_remaining -= b_length
         if terminator is not None:
-            ret += terminator.encode(encoding=encoding)
-        return ret
+            ret += terminator
+        return ret.decode(encoding=encoding)
 
-    def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[str] = None):
+    def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[bytes] = None) -> str:
         if n_bytes <= 0:
             raise ValueError("Number of bytes must be at least 1.")
         if not encoding.lower().startswith("iso8859"):
             raise ValueError("Invalid ISO 8859 encoding type.")
         bytes_remaining = n_bytes
         if terminator is not None:
-            bytes_remaining -= len(terminator.encode(encoding=encoding))
-            if bytes_remaining < 0:
-                raise ValueError(
-                    "Terminator cannot fit into specified number of bytes.")
+            bytes_remaining -= 1
         ret = self.rand_bytes(bytes_remaining)
         if terminator is not None:
-            ret += terminator.encode(encoding=encoding)
-        return ret
+            ret += terminator
+        return ret.decode(encoding=encoding)
 
     def rand_int(self, start: int = -32767, end: int = 32767) -> int:
         return self.rng.randint(start, end)

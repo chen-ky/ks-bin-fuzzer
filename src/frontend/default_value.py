@@ -83,7 +83,8 @@ class DefaultValuePopulator():
                 val.setdefault("-fz-range-min", min_val)
                 val.setdefault("-fz-range-max", max_val)
             elif t in VALID_STR_TYPE_VAL:
-                raise NotImplementedError
+                val.setdefault("encoding", "UTF-8")
+                val.setdefault("terminator", None)
             elif t in VALID_BYTE_TYPE_VAL:
                 val.setdefault("contents", None)
                 val.setdefault("size", -1)

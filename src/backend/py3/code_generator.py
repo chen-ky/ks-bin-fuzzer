@@ -152,7 +152,10 @@ class Python3CodeGenerator(Generator):
                 case "f8be":
                     indenter.append_line(
                         f"result.append(struct.pack('>d', {entry_name}))", code)
-                # case None:
+                case "str" | "strz":
+                    indenter.append_line(
+                        f"result.append({entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"))", code
+                    )
                 case _:
                     # raise NotImplementedError  # TODO
                     indenter.append_line(

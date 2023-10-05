@@ -27,7 +27,7 @@ class TestKsHelper(unittest.TestCase):
     def test_small_rand_utf8(self):
         inst = KsHelper()
         expected_length = 50
-        output = inst.rand_utf8(expected_length)
+        output = inst.rand_utf8(expected_length).encode("utf-8")
         self.assertEqual(len(output), expected_length)
         self.assertIsNotNone(output.decode())
 
@@ -35,17 +35,9 @@ class TestKsHelper(unittest.TestCase):
         inst = KsHelper()
         expected_length = 50
         expected_terminator = "\n"
-        output = inst.rand_utf8(expected_length, expected_terminator)
-        self.assertEqual(len(output), expected_length)
-        self.assertTrue(output.decode().endswith(expected_terminator))
-
-    def test_small_rand_utf8_with_long_terminator(self):
-        inst = KsHelper()
-        expected_length = 50
-        expected_terminator = "\r\n\t\t"
-        output = inst.rand_utf8(expected_length, expected_terminator)
-        self.assertEqual(len(output), expected_length)
-        self.assertTrue(output.decode().endswith(expected_terminator))
+        output = inst.rand_utf8(expected_length, expected_terminator.encode("utf-8"))
+        self.assertEqual(len(output.encode("utf-8")), expected_length)
+        self.assertTrue(output.endswith(expected_terminator))
 
     def test_zero_rand_utf8(self):
         inst = KsHelper()
@@ -58,18 +50,12 @@ class TestKsHelper(unittest.TestCase):
         terminator = "\t"
         self.assertRaises(ValueError, inst.rand_utf8, expected_length, terminator)
 
-    def test_rand_utf8_with_terminator_exceeding_size(self):
-        inst = KsHelper()
-        expected_length = 2
-        terminator = "\r\n\t"
-        self.assertRaises(ValueError, inst.rand_utf8, expected_length, terminator)
-
     def test_large_rand_utf8(self):
         inst = KsHelper()
         expected_length = 2**20
-        output = inst.rand_utf8(expected_length)
+        output = inst.rand_utf8(expected_length).encode("utf-8")
         self.assertEqual(len(output), expected_length)
-        self.assertIsNotNone(output.decode())
+        self.assertIsNotNone(output.decode(encoding="utf-8"))
 
     def test_negative_rand_utf8(self):
         inst = KsHelper()

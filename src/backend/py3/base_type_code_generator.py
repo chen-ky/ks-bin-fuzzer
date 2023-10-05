@@ -6,6 +6,8 @@ INT_TYPE = ("u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u8le",
 FLOAT_TYPE = ("f4", "f4le", "f4be", "f8", "f8le", "f8be")
 STR_TYPE = ("str", "strz")
 BYTE_TYPE = (None, )
+ISO8859_TYPE = ("ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7",
+                "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16")
 
 
 class BaseTypeCodeGenerator():
@@ -156,11 +158,26 @@ class BaseTypeCodeGenerator():
     def gen_f8be_fn(self, start: float = const.f8_MIN, end: float = const.f8_MAX) -> str:
         return self.gen_f8_fn(start=start, end=end)
 
-    def gen_str_fn(**kwargs) -> str:
-        raise NotImplementedError
+    def gen_str_fn(self, n_bytes: int, encoding: Optional[str] = "UTF-8", terminator: Optional[int] = None) -> str:
+        if n_bytes <= 0:
+            raise ValueError("`n_bytes` cannot be less than or equal to 0")
+        elif terminator is not None and (terminator < 0 or terminator > 255):
+            raise ValueError("`terminator` must be between 0 and 255")
+        encoding = encoding.upper()
+        fn_name = None
+        fn_args = f"({n_bytes}, {None if terminator is None else terminator.to_bytes(1)})"
+        if encoding == "UTF-8":
+            fn_name = "rand_utf8"
+        elif encoding == "ASCII":
+            fn_name = "rand_ascii"
+        elif encoding in ISO8859_TYPE:
+            fn_name = "rand_iso8859"
+        if fn_name is None:
+            raise ValueError("Unknown string encoding")
+        return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
-    def gen_strz_fn(**kwargs) -> str:
-        raise NotImplementedError
+    def gen_strz_fn(self, n_bytes: int, encoding: Optional[str] = "UTF-8", terminator: None = None) -> str:
+        return self.gen_str_fn(n_bytes=n_bytes, encoding=encoding, terminator=0)
 
     def generate_code(self, **kwargs) -> str:
         seq_type = kwargs["type"]
@@ -170,7 +187,7 @@ class BaseTypeCodeGenerator():
         elif seq_type in BYTE_TYPE:
             return gen_fn(n_bytes=kwargs["size"], contents=kwargs["contents"])
         elif seq_type in STR_TYPE:
-            return gen_fn()  # TODO
+            return gen_fn(n_bytes=kwargs["size"], encoding=kwargs["encoding"], terminator=kwargs["terminator"])
         raise ValueError("Unknown base type")
 
     def get_gen_type_fn(self, key: Union[str, None]) -> Callable[..., str]:
