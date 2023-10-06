@@ -192,6 +192,8 @@ class Python3CodeGenerator(Generator):
         return code
 
     def generate_code(self) -> None:
+        # import json
+        # self.logger.debug(json.dumps(self.ir.source, indent=2))
         self.logger.debug(self.ir.source)
         self.write_file_from_include_dir()
         self.write_base_object_class()

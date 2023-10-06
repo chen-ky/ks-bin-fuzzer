@@ -165,13 +165,17 @@ class BaseTypeCodeGenerator():
             raise ValueError("`terminator` must be between 0 and 255")
         encoding = encoding.upper()
         fn_name = None
-        fn_args = f"({n_bytes}, {None if terminator is None else terminator.to_bytes(1)})"
+        fn_args = f"({n_bytes}"
+        terminator = None if terminator is None else terminator.to_bytes(1)
         if encoding == "UTF-8":
             fn_name = "rand_utf8"
+            fn_args += f", {terminator})"
         elif encoding == "ASCII":
             fn_name = "rand_ascii"
+            fn_args += f", {terminator})"
         elif encoding in ISO8859_TYPE:
             fn_name = "rand_iso8859"
+            fn_args += f", \"{encoding}\", {terminator})"
         if fn_name is None:
             raise ValueError("Unknown string encoding")
         return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
