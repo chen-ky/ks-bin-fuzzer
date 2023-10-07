@@ -1,3 +1,4 @@
+#!/bin/python3
 import sys
 from frontend.frontend import Frontend
 from typing import List
@@ -11,11 +12,13 @@ from backend.py3.code_generator import Python3CodeGenerator
 ARGC_MIN = 2
 DEFAULT_OUTPUT_DIR = Path("build")
 DEFAULT_OUTPUT_FILE = DEFAULT_OUTPUT_DIR / "output_fuzzer.py"
+DEFAULT_PROGRAM_NAME = "ks-bin-fuzzer"
 
 
 def main(argv: List[str]) -> int:
     if len(argv) < ARGC_MIN:
-        print("Please provide a .ksy file.", file=sys.stderr)
+        usage = f"""Usage: {DEFAULT_PROGRAM_NAME if len(argv) < 1 else argv[0]} ksy_file"""
+        print(usage, file=sys.stderr)
         return 1
     ksy_file_path = argv[1]
     ksy_source = None
