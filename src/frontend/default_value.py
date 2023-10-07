@@ -110,7 +110,10 @@ class DefaultValuePopulator():
         pass
 
     def handle_enums(self, val):
-        pass
+        for enum_class_name, enum_class_items in val.items():
+            for enum_int_key, enum_val in enum_class_items.items():
+                enum_val.setdefault("doc", "")
+                enum_val.setdefault("doc-ref", "")
 
     def populate_default(self):
         self.handle_base_object(self.source)

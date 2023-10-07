@@ -6,7 +6,10 @@ class TypeProccessor():
         self.source = source
         self.endian = self.source["meta"]["endian"]
 
-    def process(self):
+    def pre_process(self):
+        pass
+
+    def post_process(self):
         for seq_entry in self.source["seq"]:
             if seq_entry["type"] in ("u2", "u4", "u8", "s2", "s4", "s8", "f4", "f8"):
                 seq_entry["type"] += self.endian

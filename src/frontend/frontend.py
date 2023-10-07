@@ -2,6 +2,7 @@ from typing import Any
 from datastructure.intermediate_representation import IntermediateRepresentation
 from frontend.default_value import DefaultValuePopulator
 from frontend.type_processor import TypeProccessor
+from frontend.enum_processor import EnumProccessor
 
 
 class Frontend():
@@ -12,11 +13,18 @@ class Frontend():
         populator = DefaultValuePopulator(self.source)
         populator.populate_default()
 
-    def run_processor(self) -> None:
-        type_proc = TypeProccessor(self.source)
-        type_proc.process()
+    def run_preprocessor(self) -> None:
+        processors = [EnumProccessor(self.source)]
+        for proc in processors:
+            proc.pre_process()
+
+    def run_postprocessor(self) -> None:
+        processors = [TypeProccessor(self.source)]
+        for proc in processors:
+            proc.post_process()
 
     def generate_ir(self) -> IntermediateRepresentation:
+        self.run_preprocessor()
         self.populate_default_value()
-        self.run_processor()
+        self.run_postprocessor()
         return IntermediateRepresentation(self.source)
