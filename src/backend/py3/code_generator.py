@@ -2,7 +2,7 @@ from datastructure.intermediate_representation import IntermediateRepresentation
 from backend.generator import Generator
 from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
-from utils.types import SeqEntry
+from utils.types import SeqEntry, EnumClassEntry
 from .base_type_code_generator import BaseTypeCodeGenerator
 
 from io import StringIO
@@ -73,6 +73,13 @@ class Python3CodeGenerator(Generator):
             self.generate_class(meta_val, seq_val, doc_val)
         )
 
+    def write_enums(self) -> None:
+        enums = self.ir.source["enums"]
+        for enum_class_name, enum_entries in enums.items():
+            self.output.writelines(
+                self.generate_enum(enum_class_name, enum_entries)
+            )
+
     def write_entry_point(self) -> None:
         self.output.writelines(self.generate_entry_point())
 
@@ -84,6 +91,22 @@ class Python3CodeGenerator(Generator):
             "\"\"\""
         ])
         return doc_str
+
+    def generate_enum(self, enum_name: str, enum_entries: EnumClassEntry) -> List[str]:
+        enum_name = sanitiser.sanitise_class_name(enum_name)
+        self.logger.debug(f"Generating enum \"{enum_name}\"")
+        indenter = Indenter(add_newline=True)
+        code = indenter.apply([
+            "@unique",
+            f"class {enum_name}(Enum):",
+        ])
+        indenter.indent()
+        for enum_int_key, enum_val in enum_entries.items():
+            enum_int_id = enum_val["id"]
+            indenter.append_line(f"{enum_int_id} = {enum_int_key}", code)
+        indenter.reset()
+        indenter.append_line("\n", code)
+        return code
 
     def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
@@ -110,7 +133,10 @@ class Python3CodeGenerator(Generator):
         ], code)
         indenter.indent()
         for seq_entry in seq:
+            enum_name = seq_entry.get("enum")
             entry_name = f"self.{seq_entry['id']}"  # FIXME sanitise name?
+            if enum_name is not None:
+                entry_name = f"{entry_name}.value"
             entry_type = seq_entry['type']
             match entry_type:
                 case "u1":
@@ -211,5 +237,6 @@ class Python3CodeGenerator(Generator):
         # self.logger.debug(json.dumps(self.ir.source, indent=2))
         self.logger.debug(self.ir.source)
         self.write_file_from_include_dir()
+        self.write_enums()
         self.write_base_object_class()
         self.write_entry_point()

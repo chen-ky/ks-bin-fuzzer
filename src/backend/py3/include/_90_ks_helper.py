@@ -1,6 +1,6 @@
 from random import Random
 import struct
-from typing import Any, Optional, Literal
+from typing import Any, Optional, Literal, Sequence, TypeVar
 
 
 UTF8_CODEPOINT_MIN_RANGE = 0
@@ -16,6 +16,8 @@ UTF8_CODEPOINT_TWO_BYTE_MAX_RANGE = 0x07FF
 UTF8_CODEPOINT_THREE_BYTE_MAX_RANGE = 0xFFFF
 UTF8_CODEPOINT_FOUR_BYTE_MAX_RANGE = UTF8_CODEPOINT_MAX_RANGE
 ENABLE_UTF8_SURROGATE = False  # Must be False since Python cannot encode surrogate
+
+T = TypeVar('T')
 
 
 class KsHelper:
@@ -119,6 +121,9 @@ class KsHelper:
 
     def rand_double(self) -> float:
         return struct.unpack("=d", self.rand_bytes(8))[0]
+
+    def rand_choice(self, seq: Sequence[T]) -> T:
+        return self.rng.choice(seq)
 
     @staticmethod
     def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:

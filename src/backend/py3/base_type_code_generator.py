@@ -1,5 +1,7 @@
 from typing import Callable, Union, List, Optional
 from utils import const
+import backend.py3.utils.sanitiser as sanitiser
+
 
 INT_TYPE = ("u1", "u2", "u2le", "u2be", "u4", "u4le", "u4be", "u8", "u8le",
             "u8be", "s1", "s2", "s2le", "s2be", "s4", "s4le", "s4be", "s8", "s8le", "s8be")
@@ -183,10 +185,20 @@ class BaseTypeCodeGenerator():
     def gen_strz_fn(self, n_bytes: int, encoding: Optional[str] = "UTF-8", terminator: None = None) -> str:
         return self.gen_str_fn(n_bytes=n_bytes, encoding=encoding, terminator=0)
 
+    def gen_enum_fn(self, enum_name: str):
+        fn_name = "rand_choice"
+        fn_args = f"(list({sanitiser.sanitise_class_name(enum_name)}))"
+        return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
+
     def generate_code(self, **kwargs) -> str:
         seq_type = kwargs["type"]
         gen_fn = self.get_gen_type_fn(seq_type)
-        if seq_type in INT_TYPE or seq_type in FLOAT_TYPE:
+        if seq_type in INT_TYPE:
+            enum_name = kwargs.get("enum")
+            if enum_name is not None:
+                return self.gen_enum_fn(enum_name)
+            return gen_fn(start=kwargs["-fz-range-min"], end=kwargs["-fz-range-max"])
+        elif seq_type in FLOAT_TYPE:
             return gen_fn(start=kwargs["-fz-range-min"], end=kwargs["-fz-range-max"])
         elif seq_type in BYTE_TYPE:
             return gen_fn(n_bytes=kwargs["size"], contents=kwargs["contents"])
