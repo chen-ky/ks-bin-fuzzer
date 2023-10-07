@@ -7,7 +7,7 @@ from .base_type_code_generator import BaseTypeCodeGenerator
 
 from io import StringIO
 from pathlib import Path
-from typing import List
+from typing import List, Any
 import logging
 import sys
 
@@ -66,25 +66,40 @@ class Python3CodeGenerator(Generator):
 
     def write_base_object_class(self) -> None:
         meta_val = self.ir.source["meta"]
+        doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
         types_val = self.ir.source["types"]  # TODO
         self.output.writelines(
-            self.generate_class(meta_val["id"], seq_val)
+            self.generate_class(meta_val, seq_val, doc_val)
         )
 
     def write_entry_point(self) -> None:
         self.output.writelines(self.generate_entry_point())
 
-    def generate_class(self, class_name: str, seq: List[SeqEntry]) -> List[str]:
-        class_name = sanitiser.sanitise_class_name(class_name)
+    def generate_doc(self, doc: str) -> List[str]:
+        indenter = Indenter(add_newline=True)
+        doc_str = indenter.apply([
+            "\"\"\"",
+            f"{doc}",
+            "\"\"\""
+        ])
+        return doc_str
+
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
+        class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
         code = indenter.apply([
             f"class {class_name}():",
-            "    def __init__(self) -> None:",
-            "        pass"
         ])
-        indenter.indent(add_indent=2)
+        indenter.indent()
+        if len(doc) > 0:
+            indenter.append_lines(self.generate_doc(doc), code)
+        indenter.append_lines([
+            "def __init__(self) -> None:",
+            "    pass"
+        ], code)
+        indenter.indent()
         for seq_entry in seq:
             indenter.append_lines(self.generate_seq_entry(seq_entry), code)
         code.append("\n")
