@@ -68,10 +68,20 @@ class Python3CodeGenerator(Generator):
         meta_val = self.ir.source["meta"]
         doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
-        types_val = self.ir.source["types"]  # TODO
         self.output.writelines(
             self.generate_class(meta_val, seq_val, doc_val)
         )
+
+    def write_types(self) -> None:
+        types_val = self.ir.source["types"]
+        for t_name, t_val in types_val.items():
+            meta_val = t_val
+            meta_val["id"] = t_name
+            doc_val = meta_val["doc"]
+            seq_val = meta_val["seq"]
+            self.output.writelines(
+                self.generate_class(meta_val, seq_val, doc_val)
+            )
 
     def write_enums(self) -> None:
         enums = self.ir.source["enums"]
@@ -239,4 +249,5 @@ class Python3CodeGenerator(Generator):
         self.write_file_from_include_dir()
         self.write_enums()
         self.write_base_object_class()
+        self.write_types()
         self.write_entry_point()

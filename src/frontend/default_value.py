@@ -104,7 +104,12 @@ class DefaultValuePopulator():
                 val.setdefault("size", -1)
 
     def handle_types(self, val):
-        pass
+        for type_name, type_entry in val.items():
+            self.handle_base_object(type_entry)
+            self.handle_meta(type_entry)
+            self.handle_seq(type_entry["seq"])
+            self.handle_instances(type_entry["instances"])
+            self.handle_enums(type_entry["enums"])
 
     def handle_instances(self, val):
         pass
