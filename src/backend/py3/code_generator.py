@@ -2,7 +2,7 @@ from datastructure.intermediate_representation import IntermediateRepresentation
 from backend.generator import Generator
 from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
-from utils.types import SeqEntry, EnumClassEntry
+from utils.types import SeqEntry, VerboseEnumClassEntry
 from .base_type_code_generator import BaseTypeCodeGenerator
 
 from io import StringIO
@@ -102,7 +102,7 @@ class Python3CodeGenerator(Generator):
         ])
         return doc_str
 
-    def generate_enum(self, enum_name: str, enum_entries: EnumClassEntry) -> List[str]:
+    def generate_enum(self, enum_name: str, enum_entries: VerboseEnumClassEntry) -> List[str]:
         enum_name = sanitiser.sanitise_class_name(enum_name)
         self.logger.debug(f"Generating enum \"{enum_name}\"")
         indenter = Indenter(add_newline=True)

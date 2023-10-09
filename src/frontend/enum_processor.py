@@ -1,4 +1,5 @@
 from typing import Any
+from utils.types import EnumClassEntry
 
 
 class EnumProcessor():
@@ -6,13 +7,18 @@ class EnumProcessor():
         self.source = source
 
     def pre_process(self):
-        enums = self.source["enums"]
+        enums = self.source.get("enums")
+        if enums is None:
+            return
         for enum_class_name, enum_class_items in enums.items():
             for enum_int_key, enum_val in enum_class_items.items():
                 # Transform enum to verbose enum if needed
                 # https://doc.kaitai.io/user_guide.html#verbose-enums
                 if isinstance(enum_val, str):
                     enum_class_items[enum_int_key] = {"id": enum_val}
+        custom_types = self.source.get("types")
+        if custom_types is not None:
+            EnumProcessor(custom_types).pre_process()
 
     def post_process(self):
         pass

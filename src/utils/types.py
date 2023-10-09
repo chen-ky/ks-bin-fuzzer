@@ -9,4 +9,5 @@ from typing import Any, TypeAlias, Literal
 
 BaseObject: TypeAlias = dict[str, Any]
 SeqEntry: TypeAlias = dict[str, Any]
-EnumClassEntry: TypeAlias = dict[int, dict[str, str]]
+EnumClassEntry: TypeAlias = dict[int, str]
+VerboseEnumClassEntry: TypeAlias = dict[int, dict[str, str]]
