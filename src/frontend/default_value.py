@@ -64,7 +64,7 @@ class DefaultValuePopulator():
     def handle_base_object(self, val: BaseObject):
         val.setdefault("doc", "")
         val.setdefault("doc-ref", "")
-        val.setdefault("types", [])
+        val.setdefault("types", dict())
         val.setdefault("instances", dict())
         val.setdefault("enums", dict())
 
@@ -105,11 +105,8 @@ class DefaultValuePopulator():
 
     def handle_types(self, val):
         for type_name, type_entry in val.items():
-            self.handle_base_object(type_entry)
-            self.handle_meta(type_entry)
-            self.handle_seq(type_entry["seq"])
-            self.handle_instances(type_entry["instances"])
-            self.handle_enums(type_entry["enums"])
+            type_entry.setdefault("meta", {"id": type_name})
+            DefaultValuePopulator(type_entry).populate_default()
 
     def handle_instances(self, val):
         pass

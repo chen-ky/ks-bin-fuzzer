@@ -207,10 +207,14 @@ class Python3CodeGenerator(Generator):
                     indenter.append_line(
                         f"result.append({entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"))", code
                     )
-                case _:
-                    # raise NotImplementedError  # TODO
+                case None:
                     indenter.append_line(
                         f"result.append({entry_name})", code
+                    )
+                case _:
+                    # Custom type
+                    indenter.append_line(
+                        f"result.append({entry_name}.generate())", code
                     )
         indenter.append_lines([
             "result.seek(0)",  # Move pointer to start
