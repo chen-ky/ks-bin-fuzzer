@@ -1,7 +1,7 @@
 from typing import Any
 
 
-class EnumProccessor():
+class EnumProcessor():
     def __init__(self, source: dict[str, Any]):
         self.source = source
 
