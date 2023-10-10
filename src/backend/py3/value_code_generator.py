@@ -194,7 +194,7 @@ class ValueCodeGenerator():
 
     def gen_custom_type(self, type_name: str):
         type_name = sanitiser.sanitise_class_name(type_name)
-        return f"{type_name}()"
+        return f"{type_name}(_parent=self, _root=self._root)"
 
     def generate_code(self, **kwargs) -> str:
         seq_type = kwargs["type"]
@@ -217,7 +217,6 @@ class ValueCodeGenerator():
         else:
             # Not a base type
             return self.gen_custom_type(seq_type)
-        raise ValueError("Unknown base type")
 
     def get_gen_type_fn(self, key: Union[str, None]) -> Optional[Callable[..., str]]:
         TYPE_TO_FN_MAP = {
