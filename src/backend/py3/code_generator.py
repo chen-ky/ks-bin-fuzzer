@@ -129,8 +129,9 @@ class Python3CodeGenerator(Generator):
         if len(doc) > 0:
             indenter.append_lines(self.generate_doc(doc), code)
         indenter.append_lines([
-            "def __init__(self) -> None:",
-            "    pass"
+            "def __init__(self, _parent=None, _root=None) -> None:",
+            "    self._parent = _parent",
+            "    self._root = _root if _root is not None else self"
         ], code)
         indenter.indent()
         for seq_entry in seq:
@@ -240,7 +241,7 @@ class Python3CodeGenerator(Generator):
             self.ir.entry_point_class_name)
         code = indenter.apply([
             'if "__main__" == __name__:',
-            f'    entry_point = {entry_point_class_name}()',
+            f'    entry_point = {entry_point_class_name}(_parent=None, _root=None)',
             '    sys.stdout.buffer.write(entry_point.generate())',
             '    sys.stdout.flush()'
         ])
