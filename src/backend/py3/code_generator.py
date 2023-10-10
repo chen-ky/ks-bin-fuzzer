@@ -3,7 +3,7 @@ from backend.generator import Generator
 from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
 from utils.types import SeqEntry, VerboseEnumClassEntry
-from .base_type_code_generator import BaseTypeCodeGenerator
+from .value_code_generator import ValueCodeGenerator
 
 from io import StringIO
 from pathlib import Path
@@ -20,7 +20,7 @@ class Python3CodeGenerator(Generator):
         self.ir = ir
         self.output = output
 
-        self.base_type_code_generator = BaseTypeCodeGenerator(
+        self.base_type_code_generator = ValueCodeGenerator(
             ks_helper_instance_name=self.KS_HELPER_INSTANCE)
 
         self.logger = logging.Logger(__name__)

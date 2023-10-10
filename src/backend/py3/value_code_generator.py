@@ -12,7 +12,7 @@ ISO8859_TYPE = ("ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5",
                 "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16")
 
 
-class BaseTypeCodeGenerator():
+class ValueCodeGenerator():
 
     def __init__(self, ks_helper_instance_name: str) -> None:
         self.ks_helper_instance_name = ks_helper_instance_name
@@ -200,11 +200,15 @@ class BaseTypeCodeGenerator():
         seq_type = kwargs["type"]
         gen_fn = self.get_gen_type_fn(seq_type)
         if seq_type in INT_TYPE:
-            enum_name = kwargs.get("enum")
+            if kwargs.get("valid") is not None:
+                return f"{kwargs['valid']}"
+            enum_name = kwargs.get("enum")  # Enum type can only be int
             if enum_name is not None:
                 return self.gen_enum_fn(enum_name)
             return gen_fn(start=kwargs["-fz-range-min"], end=kwargs["-fz-range-max"])
         elif seq_type in FLOAT_TYPE:
+            if kwargs.get("valid") is not None:
+                return f"{kwargs['valid']}"
             return gen_fn(start=kwargs["-fz-range-min"], end=kwargs["-fz-range-max"])
         elif seq_type in BYTE_TYPE:
             return gen_fn(n_bytes=kwargs["size"], contents=kwargs["contents"])
