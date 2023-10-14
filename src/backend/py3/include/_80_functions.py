@@ -7,11 +7,11 @@ def crc32(data: bytes) -> bytes:
 
 
 def md5(data: bytes) -> bytes:
-    return hashlib.md5(data).digest()
+    return hashlib.md5(data, usedforsecurity=False).digest()
 
 
 def sha1(data: bytes) -> bytes:
-    return hashlib.sha1(data).digest()
+    return hashlib.sha1(data, usedforsecurity=False).digest()
 
 
 def sha224(data: bytes) -> bytes:
