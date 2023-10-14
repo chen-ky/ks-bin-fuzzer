@@ -44,6 +44,13 @@ class Python3CodeGenerator(Generator):
         fn_call += ")"
         return fn_call
 
+    @staticmethod
+    def _enum_literal_to_enum(enum_literal: str) -> str:
+        enum_name, enum_val = enum_literal.split("::", maxsplit=1)
+        enum_name = sanitiser.sanitise_class_name(enum_name)
+        return f"{enum_name}.{enum_val}"
+
+
     def write_file_from_include_dir(self) -> None:
         """Write the contents of the files in the 'include' directory to the specified output"""
         path_glob = "include/_[0-9][0-9]*.py"
@@ -285,6 +292,20 @@ class Python3CodeGenerator(Generator):
         elif "-fz-order" in seq_entry:
             indenter.append_line(
                 f"self.{entry_name} = {class_name}.{entry_name}.pop(0)",
+                code
+            )
+        elif "-fz-choice" in seq_entry:
+            choice_list = []
+            if "enum" in seq_entry:
+                choice_list = []
+                for choice in seq_entry["-fz-choice"]:
+                    choice_list.append(self._enum_literal_to_enum(choice))
+                choice_list = "[" + ", ".join(choice_list) + "]"  # Remove quotes from enum string
+            else:
+                choice_list = seq_entry["-fz-choice"]
+
+            indenter.append_line(
+                f"self.{entry_name} = {self.KS_HELPER_INSTANCE}.rand_choice({choice_list})",
                 code
             )
         else:
