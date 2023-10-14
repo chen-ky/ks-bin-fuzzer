@@ -35,7 +35,7 @@ class Indenter():
         return text
 
     def apply_to_line(self, line: str) -> str:
-        if len(line) > 0:  # Only indent line that is not empty
+        if not (len(line) == 1 and line.startswith("\n")) and len(line) > 0:  # Only indent line that is not empty
             line = self.indent_char * (self.indentation * self.indent_level) + line
         if self.add_newline and not line.endswith("\n"):
             line += "\n"
