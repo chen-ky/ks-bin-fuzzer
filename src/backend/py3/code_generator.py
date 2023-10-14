@@ -130,17 +130,9 @@ class Python3CodeGenerator(Generator):
         code.append("")
         return code
 
-    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
-        class_name = sanitiser.sanitise_class_name(meta["id"])
-        self.logger.debug(f"Generating class \"{class_name}\"")
+    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry]) -> List[str]:
         indenter = Indenter(add_newline=True)
-        code = indenter.apply([
-            f"class {class_name}():",
-        ])
-        indenter.indent()
-        if len(doc) > 0:
-            indenter.append_lines(self.generate_doc(doc), code)
-        indenter.append_lines(self.generate_class_static_var(seq), code)
+        code = []
         indenter.append_lines([
             "def __init__(self, _parent=None, _root=None) -> None:",
             "    self._parent = _parent",
@@ -152,7 +144,20 @@ class Python3CodeGenerator(Generator):
             indenter.append_lines(self.generate_seq_entry(
                 class_name, seq_entry), code)
         indenter.append_line("", code)
-        indenter.unindent()
+        return code
+
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
+        class_name = sanitiser.sanitise_class_name(meta["id"])
+        self.logger.debug(f"Generating class \"{class_name}\"")
+        indenter = Indenter(add_newline=True)
+        code = indenter.apply([
+            f"class {class_name}():",
+        ])
+        indenter.indent()
+        if len(doc) > 0:
+            indenter.append_lines(self.generate_doc(doc), code)
+        indenter.append_lines(self.generate_class_static_var(seq), code)
+        indenter.append_lines(self.generate_class_init_method(class_name, seq), code)
         indenter.append_lines([
             "def generate(self) -> bytes:",
         ], code)
