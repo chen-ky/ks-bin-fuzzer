@@ -125,55 +125,55 @@ class KsHelper:
     def rand_choice(self, seq: Sequence[T]) -> T:
         return self.rng.choice(seq)
 
-    @staticmethod
-    def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
-        return int.from_bytes(b, endian, signed=False)
+    # @staticmethod
+    # def bytes_to_uint(b: bytes, endian: Literal["big", "little"]) -> int:
+    #     return int.from_bytes(b, endian, signed=False)
 
-    @staticmethod
-    def bytes_to_int(b: bytes, endian: Literal["big", "little"]) -> int:
-        return int.from_bytes(b, endian, signed=True)
+    # @staticmethod
+    # def bytes_to_int(b: bytes, endian: Literal["big", "little"]) -> int:
+    #     return int.from_bytes(b, endian, signed=True)
 
-    @staticmethod
-    def replace_bytes(b_new: bytes, b_original: bytes, start_loc: int) -> bytes:
-        """
-        Replace the bytes at `start_loc` of `b_original` with `b_new`.
+    # @staticmethod
+    # def replace_bytes(b_new: bytes, b_original: bytes, start_loc: int) -> bytes:
+    #     """
+    #     Replace the bytes at `start_loc` of `b_original` with `b_new`.
 
-        If `start_loc` is larger than or equal to the length of `b_original`,
-        it will append `b_new` at the end of `b_original`.
+    #     If `start_loc` is larger than or equal to the length of `b_original`,
+    #     it will append `b_new` at the end of `b_original`.
 
-        If `b_new` has a length that is longer than the remaining length of
-        `b_original` at `start_loc`, it will replace and then extend `b_original`.
-        """
-        if start_loc < 0:
-            raise ValueError("Byte start location cannot be negative.")
-        first_half = b_original[:start_loc]
-        last_half = b_original[start_loc + len(b_new):]
-        return first_half + b_new + last_half
+    #     If `b_new` has a length that is longer than the remaining length of
+    #     `b_original` at `start_loc`, it will replace and then extend `b_original`.
+    #     """
+    #     if start_loc < 0:
+    #         raise ValueError("Byte start location cannot be negative.")
+    #     first_half = b_original[:start_loc]
+    #     last_half = b_original[start_loc + len(b_new):]
+    #     return first_half + b_new + last_half
 
-    @staticmethod
-    def inplace_replace_bytes(b_new: bytes | bytearray, b_original: bytearray, start_loc: int) -> bytes:
-        if len(b_new) <= 0:
-            return b_original
-        if start_loc > len(b_original):
-            start_loc = len(b_original)
+    # @staticmethod
+    # def inplace_replace_bytes(b_new: bytes | bytearray, b_original: bytearray, start_loc: int) -> bytes:
+    #     if len(b_new) <= 0:
+    #         return b_original
+    #     if start_loc > len(b_original):
+    #         start_loc = len(b_original)
 
-        for i, b in enumerate(b_new):
-            if start_loc < len(b_original):
-                b_original[start_loc] = b
-            else:
-                # Insert all at once and exit loop
-                b_original += b_new[i:]
-                break
-            start_loc += 1
-        return b_original
+    #     for i, b in enumerate(b_new):
+    #         if start_loc < len(b_original):
+    #             b_original[start_loc] = b
+    #         else:
+    #             # Insert all at once and exit loop
+    #             b_original += b_new[i:]
+    #             break
+    #         start_loc += 1
+    #     return b_original
 
-    @staticmethod
-    def extract_bytes(b: bytes | bytearray, start_end_pos: tuple[int, int]):
-        start_pos, end_pos = start_end_pos
-        if start_pos == -1 and end_pos == -1:
-            return b[:]
-        if start_pos == -1:
-            return b[:end_pos]
-        if end_pos == -1:
-            return b[:start_pos]
-        return b[start_pos:end_pos]
+    # @staticmethod
+    # def extract_bytes(b: bytes | bytearray, start_end_pos: tuple[int, int]):
+    #     start_pos, end_pos = start_end_pos
+    #     if start_pos == -1 and end_pos == -1:
+    #         return b[:]
+    #     if start_pos == -1:
+    #         return b[:end_pos]
+    #     if end_pos == -1:
+    #         return b[:start_pos]
+    #     return b[start_pos:end_pos]
