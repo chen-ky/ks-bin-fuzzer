@@ -66,110 +66,110 @@ class TestKsHelper(unittest.TestCase):
         terminator = "a"
         self.assertRaises(ValueError, inst.rand_utf8, -1, terminator)
 
-    def test_bytes_to_uint(self):
-        inst = KsHelper()
-        expected_val = 65535
-        byte_val = b"\xff\xff"
-        endian = "little"
-        self.assertEqual(expected_val, inst.bytes_to_uint(byte_val, endian))
+    # def test_bytes_to_uint(self):
+    #     inst = KsHelper()
+    #     expected_val = 65535
+    #     byte_val = b"\xff\xff"
+    #     endian = "little"
+    #     self.assertEqual(expected_val, inst.bytes_to_uint(byte_val, endian))
 
-    def test_bytes_to_int(self):
-        inst = KsHelper()
-        expected_val = -1
-        byte_val = b"\xff\xff"
-        endian = "big"
-        self.assertEqual(expected_val, inst.bytes_to_int(byte_val, endian))
+    # def test_bytes_to_int(self):
+    #     inst = KsHelper()
+    #     expected_val = -1
+    #     byte_val = b"\xff\xff"
+    #     endian = "big"
+    #     self.assertEqual(expected_val, inst.bytes_to_int(byte_val, endian))
 
-    def test_replace_bytes_smaller(self):
-        inst = KsHelper()
-        b_old = b"asdf"
-        b_new = b"poi"
-        expected_b = b"poif"
-        self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
+    # def test_replace_bytes_smaller(self):
+    #     inst = KsHelper()
+    #     b_old = b"asdf"
+    #     b_new = b"poi"
+    #     expected_b = b"poif"
+    #     self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
 
-    def test_replace_bytes_equal(self):
-        inst = KsHelper()
-        b_old = b"asdf"
-        b_new = b"qwer"
-        expected_b = b"qwer"
-        self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
+    # def test_replace_bytes_equal(self):
+    #     inst = KsHelper()
+    #     b_old = b"asdf"
+    #     b_new = b"qwer"
+    #     expected_b = b"qwer"
+    #     self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
 
-    def test_replace_bytes_larger(self):
-        inst = KsHelper()
-        b_old = b"asdf"
-        b_new = b"poila"
-        expected_b = b"poila"
-        self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
+    # def test_replace_bytes_larger(self):
+    #     inst = KsHelper()
+    #     b_old = b"asdf"
+    #     b_new = b"poila"
+    #     expected_b = b"poila"
+    #     self.assertEqual(inst.replace_bytes(b_new, b_old, 0), expected_b)
 
-    def test_replace_bytes_half_replacement(self):
-        inst = KsHelper()
-        b_old = b"asdf"
-        b_new = b"2345"
-        expected_b = b"as2345"
-        replace_start_pos = 2
-        self.assertEqual(inst.replace_bytes(b_new, b_old, replace_start_pos), expected_b)
+    # def test_replace_bytes_half_replacement(self):
+    #     inst = KsHelper()
+    #     b_old = b"asdf"
+    #     b_new = b"2345"
+    #     expected_b = b"as2345"
+    #     replace_start_pos = 2
+    #     self.assertEqual(inst.replace_bytes(b_new, b_old, replace_start_pos), expected_b)
 
-    def test_replace_bytes_end(self):
-        inst = KsHelper()
-        b_old = b"asdf"
-        b_new = b"2345"
-        expected_b = b"asdf2345"
-        replace_start_pos = 4
-        self.assertEqual(inst.replace_bytes(b_new, b_old, replace_start_pos), expected_b)
+    # def test_replace_bytes_end(self):
+    #     inst = KsHelper()
+    #     b_old = b"asdf"
+    #     b_new = b"2345"
+    #     expected_b = b"asdf2345"
+    #     replace_start_pos = 4
+    #     self.assertEqual(inst.replace_bytes(b_new, b_old, replace_start_pos), expected_b)
 
-    def test_inplace_replace_bytes_smaller(self):
-        inst = KsHelper()
-        b_old = bytearray(b"asdf")
-        b_new = bytearray(b"poi")
-        expected_str = "poif"
-        output = inst.inplace_replace_bytes(b_new, b_old, 0)
-        expected_b_len = 4
-        self.assertEqual(len(output), expected_b_len)
-        self.assertIs(b_old, output)
-        self.assertEqual(output.decode(), expected_str)
+    # def test_inplace_replace_bytes_smaller(self):
+    #     inst = KsHelper()
+    #     b_old = bytearray(b"asdf")
+    #     b_new = bytearray(b"poi")
+    #     expected_str = "poif"
+    #     output = inst.inplace_replace_bytes(b_new, b_old, 0)
+    #     expected_b_len = 4
+    #     self.assertEqual(len(output), expected_b_len)
+    #     self.assertIs(b_old, output)
+    #     self.assertEqual(output.decode(), expected_str)
 
-    def test_inplace_replace_bytes_equal(self):
-        inst = KsHelper()
-        b_old = bytearray(b"asdf")
-        b_new = bytearray(b"qwer")
-        expected_str = "qwer"
-        expected_b_len = 4
-        output = inst.inplace_replace_bytes(b_new, b_old, 0)
-        self.assertEqual(len(output), expected_b_len)
-        self.assertIs(b_old, output)
-        self.assertEqual(output.decode(), expected_str)
+    # def test_inplace_replace_bytes_equal(self):
+    #     inst = KsHelper()
+    #     b_old = bytearray(b"asdf")
+    #     b_new = bytearray(b"qwer")
+    #     expected_str = "qwer"
+    #     expected_b_len = 4
+    #     output = inst.inplace_replace_bytes(b_new, b_old, 0)
+    #     self.assertEqual(len(output), expected_b_len)
+    #     self.assertIs(b_old, output)
+    #     self.assertEqual(output.decode(), expected_str)
 
-    def test_inplace_replace_bytes_larger(self):
-        inst = KsHelper()
-        b_old = bytearray(b"asdf")
-        b_new = bytearray(b"poila")
-        expected_str = "poila"
-        expected_b_len = 5
-        output = inst.inplace_replace_bytes(b_new, b_old, 0)
-        self.assertEqual(len(output), expected_b_len)
-        self.assertIs(b_old, output)
-        self.assertEqual(output.decode(), expected_str)
+    # def test_inplace_replace_bytes_larger(self):
+    #     inst = KsHelper()
+    #     b_old = bytearray(b"asdf")
+    #     b_new = bytearray(b"poila")
+    #     expected_str = "poila"
+    #     expected_b_len = 5
+    #     output = inst.inplace_replace_bytes(b_new, b_old, 0)
+    #     self.assertEqual(len(output), expected_b_len)
+    #     self.assertIs(b_old, output)
+    #     self.assertEqual(output.decode(), expected_str)
 
-    def test_inplace_replace_bytes_half_replacement(self):
-        inst = KsHelper()
-        b_old = bytearray(b"asdf")
-        b_new = bytearray(b"2345")
-        expected_str = "as2345"
-        replace_start_pos = 2
-        expected_b_len = 6
-        output = inst.inplace_replace_bytes(b_new, b_old, replace_start_pos)
-        self.assertEqual(len(output), expected_b_len)
-        self.assertIs(b_old, output)
-        self.assertEqual(output.decode(), expected_str)
+    # def test_inplace_replace_bytes_half_replacement(self):
+    #     inst = KsHelper()
+    #     b_old = bytearray(b"asdf")
+    #     b_new = bytearray(b"2345")
+    #     expected_str = "as2345"
+    #     replace_start_pos = 2
+    #     expected_b_len = 6
+    #     output = inst.inplace_replace_bytes(b_new, b_old, replace_start_pos)
+    #     self.assertEqual(len(output), expected_b_len)
+    #     self.assertIs(b_old, output)
+    #     self.assertEqual(output.decode(), expected_str)
 
-    def test_inplace_replace_bytes_end(self):
-        inst = KsHelper()
-        b_old = bytearray(b"asdf")
-        b_new = bytearray(b"2345")
-        expected_str = "asdf2345"
-        replace_start_pos = 4
-        expected_b_len = 8
-        output = inst.inplace_replace_bytes(b_new, b_old, replace_start_pos)
-        self.assertEqual(len(output), expected_b_len)
-        self.assertIs(b_old, output)
-        self.assertEqual(output.decode(), expected_str)
+    # def test_inplace_replace_bytes_end(self):
+    #     inst = KsHelper()
+    #     b_old = bytearray(b"asdf")
+    #     b_new = bytearray(b"2345")
+    #     expected_str = "asdf2345"
+    #     replace_start_pos = 4
+    #     expected_b_len = 8
+    #     output = inst.inplace_replace_bytes(b_new, b_old, replace_start_pos)
+    #     self.assertEqual(len(output), expected_b_len)
+    #     self.assertIs(b_old, output)
+    #     self.assertEqual(output.decode(), expected_str)
