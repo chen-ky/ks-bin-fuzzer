@@ -50,7 +50,6 @@ class Python3CodeGenerator(Generator):
         enum_name = sanitiser.sanitise_class_name(enum_name)
         return f"{enum_name}.{enum_val}"
 
-
     def write_file_from_include_dir(self) -> None:
         """Write the contents of the files in the 'include' directory to the specified output"""
         path_glob = "include/_[0-9][0-9]*.py"
@@ -159,7 +158,8 @@ class Python3CodeGenerator(Generator):
         for seq_entry in seq:
             enum_name = seq_entry.get("enum")
             entry_name = f"{seq_entry['id']}"  # FIXME sanitise name?
-            indenter.append_lines([f"def {entry_name}_to_bytes(self) -> bytes:"], code)
+            indenter.append_lines(
+                [f"def {entry_name}_to_bytes(self) -> bytes:"], code)
             indenter.indent()
             self_entry_name = f"self.{seq_entry['id']}"
             if enum_name is not None:
@@ -256,101 +256,27 @@ class Python3CodeGenerator(Generator):
         if len(doc) > 0:
             indenter.append_lines(self.generate_doc(doc), code)
         indenter.append_lines(self.generate_class_static_var(seq), code)
-        indenter.append_lines(self.generate_class_init_method(class_name, seq), code)
+        indenter.append_lines(
+            self.generate_class_init_method(class_name, seq), code)
         indenter.append_lines(self.generate_seq_to_bytes_method(seq), code)
+
         indenter.append_lines([
             "def result(self) -> bytes:",
         ], code)
         indenter.indent()
-
         for seq_entry in seq:
-            to_bytes_fn = f"self.{seq_entry['id']}_to_bytes()"  # FIXME sanitise name?
+            # FIXME sanitise name?
+            to_bytes_fn = f"self.{seq_entry['id']}_to_bytes()"
             indenter.append_lines([
                 f"self._io.append({to_bytes_fn})"
             ], code)
-        #     if enum_name is not None:
-        #         entry_name = f"{entry_name}.value"
-        #     entry_type = seq_entry['type']
-        #     match entry_type:
-        #         case "u1":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('B', {entry_name}))", code)
-        #         case "u2le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<H', {entry_name}))", code)
-        #         case "u2be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>H', {entry_name}))", code)
-        #         case "u4le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<I', {entry_name}))", code)
-        #         case "u4be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>I', {entry_name}))", code)
-        #         case "u8le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<Q', {entry_name}))", code)
-        #         case "u8be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>Q', {entry_name}))", code)
-        #         case "s1":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('b', {entry_name}))", code)
-        #         case "s2le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<h', {entry_name}))", code)
-        #         case "s2be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>h', {entry_name}))", code)
-        #         case "s4le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<i', {entry_name}))", code)
-        #         case "s4be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>i', {entry_name}))", code)
-        #         case "s8le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<q', {entry_name}))", code)
-        #         case "s8be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>q', {entry_name}))", code)
-        #         case "f4le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<f', {entry_name}))", code)
-        #         case "f4be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>f', {entry_name}))", code)
-        #         case "f8le":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('<d', {entry_name}))", code)
-        #         case "f8be":
-        #             indenter.append_line(
-        #                 f"self._io.append(struct.pack('>d', {entry_name}))", code)
-        #         case "str" | "strz":
-        #             indenter.append_line(
-        #                 f"self._io.append({entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"))", code
-        #             )
-        #         case None:
-        #             indenter.append_line(
-        #                 f"self._io.append({entry_name})", code
-        #             )
-        #         case _:
-        #             # Custom type
-        #             if "repeat" in seq_entry:
-        #                 indenter.append_lines([
-        #                     f"for entry_instance in {entry_name}:",
-        #                     "    self._io.append(entry_instance.generate())",
-        #                 ], code)
-        #             else:
-        #                 indenter.append_line(
-        #                     f"self._io.append({entry_name}.generate())", code
-        #                 )
         indenter.append_lines([
             "self._io.seek(0)",  # Move pointer to start
             "return self._io.get_data()",  # Return bytes using pointer,
             "",
         ], code)
         indenter.unindent()
+
         indenter.append_lines([
             "def __len__(self) -> int:",
             "    return len(self._io)",
@@ -375,7 +301,9 @@ class Python3CodeGenerator(Generator):
             repeat_type = seq_entry["repeat"]
             if repeat_type == "until":
                 # loop_conditions = seq_entry["repeat-until"].replace("_io.eof", "self._io.is_eos()")
-                loop_conditions = seq_entry["repeat-until"].replace("_io.eof", "False")  # Ignore eos/eof for now
+                # Ignore eos/eof for now
+                loop_conditions = seq_entry["repeat-until"].replace(
+                    "_io.eof", "False")
                 indenter.append_lines([
                     "while True:",
                     f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
@@ -396,7 +324,8 @@ class Python3CodeGenerator(Generator):
                 choice_list = []
                 for choice in seq_entry["-fz-choice"]:
                     choice_list.append(self._enum_literal_to_enum(choice))
-                choice_list = "[" + ", ".join(choice_list) + "]"  # Remove quotes from enum string
+                # Remove quotes from enum string
+                choice_list = "[" + ", ".join(choice_list) + "]"
             else:
                 choice_list = seq_entry["-fz-choice"]
 
