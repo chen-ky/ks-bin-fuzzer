@@ -45,7 +45,7 @@ class Python3CodeGenerator(Generator):
         return fn_call
 
     def write_file_from_include_dir(self) -> None:
-        """Write the contents of the files in the include directory to the specified output"""
+        """Write the contents of the files in the 'include' directory to the specified output"""
         path_glob = "include/_[0-9][0-9]*.py"
         # This includes directory which matches the glob pattern
         match_list = list(Path(__file__).parent.glob(path_glob))
@@ -131,7 +131,8 @@ class Python3CodeGenerator(Generator):
         indenter.append_lines([
             "def __init__(self, _parent=None, _root=None) -> None:",
             "    self._parent = _parent",
-            "    self._root = _root if _root is not None else self"
+            "    self._root = _root if _root is not None else self",
+            "    self._result = SeekableBuffer()",
         ], code)
         indenter.indent()
         for seq_entry in seq:
@@ -140,7 +141,6 @@ class Python3CodeGenerator(Generator):
         indenter.unindent()
         indenter.append_lines([
             "def generate(self) -> bytes:",
-            "    result = SeekableBuffer()"
         ], code)
         indenter.indent()
         for seq_entry in seq:
@@ -152,74 +152,80 @@ class Python3CodeGenerator(Generator):
             match entry_type:
                 case "u1":
                     indenter.append_line(
-                        f"result.append(struct.pack('B', {entry_name}))", code)
+                        f"self._result.append(struct.pack('B', {entry_name}))", code)
                 case "u2le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<H', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<H', {entry_name}))", code)
                 case "u2be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>H', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>H', {entry_name}))", code)
                 case "u4le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<I', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<I', {entry_name}))", code)
                 case "u4be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>I', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>I', {entry_name}))", code)
                 case "u8le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<Q', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<Q', {entry_name}))", code)
                 case "u8be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>Q', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>Q', {entry_name}))", code)
                 case "s1":
                     indenter.append_line(
-                        f"result.append(struct.pack('b', {entry_name}))", code)
+                        f"self._result.append(struct.pack('b', {entry_name}))", code)
                 case "s2le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<h', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<h', {entry_name}))", code)
                 case "s2be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>h', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>h', {entry_name}))", code)
                 case "s4le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<i', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<i', {entry_name}))", code)
                 case "s4be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>i', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>i', {entry_name}))", code)
                 case "s8le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<q', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<q', {entry_name}))", code)
                 case "s8be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>q', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>q', {entry_name}))", code)
                 case "f4le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<f', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<f', {entry_name}))", code)
                 case "f4be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>f', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>f', {entry_name}))", code)
                 case "f8le":
                     indenter.append_line(
-                        f"result.append(struct.pack('<d', {entry_name}))", code)
+                        f"self._result.append(struct.pack('<d', {entry_name}))", code)
                 case "f8be":
                     indenter.append_line(
-                        f"result.append(struct.pack('>d', {entry_name}))", code)
+                        f"self._result.append(struct.pack('>d', {entry_name}))", code)
                 case "str" | "strz":
                     indenter.append_line(
-                        f"result.append({entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"))", code
+                        f"self._result.append({entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"))", code
                     )
                 case None:
                     indenter.append_line(
-                        f"result.append({entry_name})", code
+                        f"self._result.append({entry_name})", code
                     )
                 case _:
                     # Custom type
                     indenter.append_line(
-                        f"result.append({entry_name}.generate())", code
+                        f"self._result.append({entry_name}.generate())", code
                     )
         indenter.append_lines([
-            "result.seek(0)",  # Move pointer to start
-            "return result.get_data()",  # Return bytes using pointer
+            "self._result.seek(0)",  # Move pointer to start
+            "return self._result.get_data()",  # Return bytes using pointer,
+            "",
+        ], code)
+        indenter.unindent()
+        indenter.append_lines([
+            "def __len__(self) -> int:",
+            "    return len(self._result)",
         ], code)
         indenter.reset()
         indenter.append_line("\n", code)
@@ -243,7 +249,7 @@ class Python3CodeGenerator(Generator):
             'if "__main__" == __name__:',
             f'    entry_point = {entry_point_class_name}(_parent=None, _root=None)',
             '    sys.stdout.buffer.write(entry_point.generate())',
-            '    sys.stdout.flush()'
+            '    sys.stdout.flush()',
         ])
         return code
 
