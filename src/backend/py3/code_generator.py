@@ -118,6 +118,18 @@ class Python3CodeGenerator(Generator):
         indenter.append_line("\n", code)
         return code
 
+    def generate_class_static_var(self, seq: List[SeqEntry]) -> List[str]:
+        """Handle static variable for a type, such as those using `-fz-order`"""
+        indenter = Indenter(add_newline=True)
+        code = []
+        for seq_entry in seq:
+            generate_order = seq_entry.get("-fz-order")
+            if generate_order is not None and len(generate_order) > 0:
+                entry_name = seq_entry["id"]
+                indenter.append_line(f"{entry_name} = {generate_order}", code)
+        code.append("")
+        return code
+
     def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
@@ -128,6 +140,7 @@ class Python3CodeGenerator(Generator):
         indenter.indent()
         if len(doc) > 0:
             indenter.append_lines(self.generate_doc(doc), code)
+        indenter.append_lines(self.generate_class_static_var(seq), code)
         indenter.append_lines([
             "def __init__(self, _parent=None, _root=None) -> None:",
             "    self._parent = _parent",
@@ -136,8 +149,9 @@ class Python3CodeGenerator(Generator):
         ], code)
         indenter.indent()
         for seq_entry in seq:
-            indenter.append_lines(self.generate_seq_entry(seq_entry), code)
-        code.append("\n")
+            indenter.append_lines(self.generate_seq_entry(
+                class_name, seq_entry), code)
+        indenter.append_line("", code)
         indenter.unindent()
         indenter.append_lines([
             "def generate(self) -> bytes:",
@@ -232,13 +246,21 @@ class Python3CodeGenerator(Generator):
         self.logger.debug(f"Done generating class \"{class_name}\"")
         return code
 
-    def generate_seq_entry(self, seq_entry: SeqEntry) -> List[str]:
+    def generate_seq_entry(self, class_name: str, seq_entry: SeqEntry) -> List[str]:
         entry_name = f"{seq_entry['id']}"  # FIXME sanitise name?
         self.logger.debug(f"Generating seq entry \"{entry_name}\"")
         indenter = Indenter(add_newline=True)
-        code = indenter.apply([
-            f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
-        ])
+        code = []
+        if "-fz-order" in seq_entry:
+            code = indenter.append_line(
+                f"self.{entry_name} = {class_name}.{entry_name}.pop(0)",
+                code
+            )
+        else:
+            indenter.append_line(
+                f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
+                code
+            )
         return code
 
     def generate_entry_point(self) -> List[str]:
