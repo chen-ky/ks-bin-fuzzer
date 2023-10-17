@@ -4,6 +4,7 @@ from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
 from utils.types import SeqEntry, VerboseEnumClassEntry
 from .value_code_generator import ValueCodeGenerator
+import re
 
 from io import StringIO
 from pathlib import Path
@@ -45,10 +46,52 @@ class Python3CodeGenerator(Generator):
         return fn_call
 
     @staticmethod
-    def _enum_literal_to_enum(enum_literal: str) -> str:
-        enum_name, enum_val = enum_literal.split("::", maxsplit=1)
-        enum_name = sanitiser.sanitise_class_name(enum_name)
-        return f"{enum_name}.{enum_val}"
+    def _transpile_namespace(expression: str) -> str:
+        cleaned_expression = []
+        for ns in expression.split("::"):
+            ns = ns.strip()
+            if len(ns) <= 0:
+                continue
+            cleaned_expression.append(ns)
+        for i in range(len(cleaned_expression) - 1):
+            cleaned_expression[i] = sanitiser.sanitise_class_name(
+                cleaned_expression[i])
+        return ".".join(cleaned_expression)
+
+    @staticmethod
+    def _transpile_local_ref(available_ref: List[str], expression: str) -> str:
+        cleaned_expression = []
+        for value in expression.split():
+            if value in available_ref:
+                cleaned_expression.append(f"self.{value}")
+            else:
+                cleaned_expression.append(value)
+        return " ".join(cleaned_expression)
+
+    @classmethod
+    def _transpile_local_ref_to_bytes(cls, available_ref: List[str], expression: str) -> str:
+        expression = cls._transpile_local_ref(available_ref, expression)
+        cleaned_expression = []
+        for value in expression.split():
+            if value.startswith("self.") or value.startswith("_."):  # "_" is a special variable, representing the previously parsed/generated object
+                cleaned_expression.append(f"{value}_to_bytes()")
+            else:
+                cleaned_expression.append(value)
+        return " ".join(cleaned_expression)
+
+    @staticmethod
+    def _transpile_lambda(expression: str) -> str:
+        raise NotImplementedError
+        return expression
+
+    @classmethod
+    def _expression_transpiler(cls, available_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
+        expression = cls._transpile_namespace(expression)
+        if produce_bytes:
+            expression = cls._transpile_local_ref_to_bytes(available_ref, expression)
+        else:
+            expression = cls._transpile_local_ref(available_ref, expression)
+        return expression
 
     def write_file_from_include_dir(self) -> None:
         """Write the contents of the files in the 'include' directory to the specified output"""
@@ -74,8 +117,9 @@ class Python3CodeGenerator(Generator):
         meta_val = self.ir.source["meta"]
         doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
+        available_ref = self.ir.source["_available_ref"]
         self.output.writelines(
-            self.generate_class(meta_val, seq_val, doc_val)
+            self.generate_class(meta_val, seq_val, doc_val, available_ref)
         )
 
     def write_types(self) -> None:
@@ -85,8 +129,9 @@ class Python3CodeGenerator(Generator):
             meta_val["id"] = t_name
             doc_val = meta_val["doc"]
             seq_val = meta_val["seq"]
+            available_ref = meta_val["_available_ref"]
             self.output.writelines(
-                self.generate_class(meta_val, seq_val, doc_val)
+                self.generate_class(meta_val, seq_val, doc_val, available_ref)
             )
 
     def write_enums(self) -> None:
@@ -136,7 +181,7 @@ class Python3CodeGenerator(Generator):
         code.append("")
         return code
 
-    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry]) -> List[str]:
+    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], available_ref: List[str]) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = []
         indenter.append_lines([
@@ -144,11 +189,12 @@ class Python3CodeGenerator(Generator):
             "    self._parent = _parent",
             "    self._root = _root if _root is not None else self",
             "    self._io = SeekableBuffer()",
+            "    self._cached = False",
         ], code)
         indenter.indent()
         for seq_entry in seq:
             indenter.append_lines(self.generate_seq_entry(
-                class_name, seq_entry), code)
+                class_name, seq_entry, available_ref), code)
         indenter.append_line("", code)
         return code
 
@@ -245,7 +291,20 @@ class Python3CodeGenerator(Generator):
             indenter.unindent()
         return code
 
-    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str) -> List[str]:
+    def generate_fz_process_code(self, fz_process_key: str, class_name: str, seq_entry: SeqEntry, available_ref: List[str]) -> List[str]:
+        indenter = Indenter(add_newline=True)
+        code = []
+        entry_name = seq_entry["id"]
+        expression = self._expression_transpiler(available_ref, seq_entry[fz_process_key], produce_bytes=True)
+        match fz_process_key:
+            case "-fz-process-crc32":
+                indenter.append_line(
+                    f"self.{entry_name} = crc32({expression})", code)
+            case _:
+                raise ValueError(f"Unknown key: '{fz_process_key}'")
+        return code
+
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str]) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
@@ -257,11 +316,14 @@ class Python3CodeGenerator(Generator):
             indenter.append_lines(self.generate_doc(doc), code)
         indenter.append_lines(self.generate_class_static_var(seq), code)
         indenter.append_lines(
-            self.generate_class_init_method(class_name, seq), code)
+            self.generate_class_init_method(class_name, seq, available_ref), code)
         indenter.append_lines(self.generate_seq_to_bytes_method(seq), code)
 
         indenter.append_lines([
             "def result(self) -> bytes:",
+            "    if self._cached:",
+            "        self._io.seek(0)",  # Move pointer to start
+            "        return self._io.get_data()",  # Return bytes using pointer,
         ], code)
         indenter.indent()
         for seq_entry in seq:
@@ -271,6 +333,7 @@ class Python3CodeGenerator(Generator):
                 f"self._io.append({to_bytes_fn})"
             ], code)
         indenter.append_lines([
+            "self._cached = True",
             "self._io.seek(0)",  # Move pointer to start
             "return self._io.get_data()",  # Return bytes using pointer,
             "",
@@ -286,11 +349,17 @@ class Python3CodeGenerator(Generator):
         self.logger.debug(f"Done generating class \"{class_name}\"")
         return code
 
-    def generate_seq_entry(self, class_name: str, seq_entry: SeqEntry) -> List[str]:
+    def generate_seq_entry(self, class_name: str, seq_entry: SeqEntry, available_ref: List[str]) -> List[str]:
         entry_name = f"{seq_entry['id']}"  # FIXME sanitise name?
         self.logger.debug(f"Generating seq entry \"{entry_name}\"")
         indenter = Indenter(add_newline=True)
         code = []
+
+        fz_process_key = None
+        for key in seq_entry.keys():
+            if re.fullmatch(r"\-fz\-process\-.+", key):
+                fz_process_key = key
+                break
 
         if "repeat" in seq_entry:
             seq_class_name = sanitiser.sanitise_class_name(seq_entry["type"])
@@ -323,7 +392,7 @@ class Python3CodeGenerator(Generator):
             if "enum" in seq_entry:
                 choice_list = []
                 for choice in seq_entry["-fz-choice"]:
-                    choice_list.append(self._enum_literal_to_enum(choice))
+                    choice_list.append(self._transpile_namespace(choice))
                 # Remove quotes from enum string
                 choice_list = "[" + ", ".join(choice_list) + "]"
             else:
@@ -333,6 +402,9 @@ class Python3CodeGenerator(Generator):
                 f"self.{entry_name} = {self.KS_HELPER_INSTANCE}.rand_choice({choice_list})",
                 code
             )
+        elif fz_process_key is not None:
+            indenter.append_lines(self.generate_fz_process_code(
+                fz_process_key, class_name, seq_entry, available_ref), code)
         else:
             indenter.append_line(
                 f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
