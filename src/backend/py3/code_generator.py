@@ -17,6 +17,20 @@ class Python3CodeGenerator(Generator):
 
     KS_HELPER_INSTANCE = "ks_helper"  # Defined in _99_global_obj.py
 
+    CHECKSUM_FN_NAME_MAP = {
+        "-fz-process-crc32": "crc32",
+        "-fz-process-md5": "md5",
+        "-fz-process-sha1": "sha1",
+        "-fz-process-sha224": "sha224",
+        "-fz-process-sha256": "sha256",
+        "-fz-process-sha384": "sha384",
+        "-fz-process-sha512": "sha512",
+        "-fz-process-sha3-224": "sha3_224",
+        "-fz-process-sha3-256": "sha3_256",
+        "-fz-process-sha3-384": "sha3_384",
+        "-fz-process-sha3-512": "sha3_512",
+    }
+
     def __init__(self, ir: IntermediateRepresentation, output: StringIO) -> None:
         self.ir = ir
         self.output = output
@@ -73,7 +87,8 @@ class Python3CodeGenerator(Generator):
         expression = cls._transpile_local_ref(available_ref, expression)
         cleaned_expression = []
         for value in expression.split():
-            if value.startswith("self.") or value.startswith("_."):  # "_" is a special variable, representing the previously parsed/generated object
+            # "_" is a special variable, representing the previously parsed/generated object
+            if value.startswith("self.") or value.startswith("_."):
                 cleaned_expression.append(f"{value}_to_bytes()")
             else:
                 cleaned_expression.append(value)
@@ -88,7 +103,8 @@ class Python3CodeGenerator(Generator):
     def _expression_transpiler(cls, available_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
         expression = cls._transpile_namespace(expression)
         if produce_bytes:
-            expression = cls._transpile_local_ref_to_bytes(available_ref, expression)
+            expression = cls._transpile_local_ref_to_bytes(
+                available_ref, expression)
         else:
             expression = cls._transpile_local_ref(available_ref, expression)
         return expression
@@ -295,13 +311,14 @@ class Python3CodeGenerator(Generator):
         indenter = Indenter(add_newline=True)
         code = []
         entry_name = seq_entry["id"]
-        expression = self._expression_transpiler(available_ref, seq_entry[fz_process_key], produce_bytes=True)
-        match fz_process_key:
-            case "-fz-process-crc32":
-                indenter.append_line(
-                    f"self.{entry_name} = crc32({expression})", code)
-            case _:
-                raise ValueError(f"Unknown key: '{fz_process_key}'")
+        expression = self._expression_transpiler(
+            available_ref, seq_entry[fz_process_key], produce_bytes=True)
+        if fz_process_key in self.CHECKSUM_FN_NAME_MAP.keys():
+            fn_name = self.CHECKSUM_FN_NAME_MAP[fz_process_key]
+            indenter.append_line(
+                f"self.{entry_name} = {fn_name}({expression})", code)
+        else:
+            raise ValueError(f"Unknown key: '{fz_process_key}'")
         return code
 
     def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str]) -> List[str]:
