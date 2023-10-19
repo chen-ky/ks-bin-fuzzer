@@ -11,7 +11,7 @@ class Frontend():
         self.source = source
 
     def populate_default_value(self) -> None:
-        populator = DefaultValuePopulator(self.source)
+        populator = DefaultValuePopulator(self.source, self.source["meta"]["endian"])
         populator.populate_default()
 
     def run_preprocessor(self) -> None:

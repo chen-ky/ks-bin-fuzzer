@@ -13,9 +13,10 @@ VALID_BYTE_TYPE_VAL = [None,]
 
 class DefaultValuePopulator():
 
-    def __init__(self, source: dict[str, Any]):
+    def __init__(self, source: dict[str, Any], base_class_endian: str):
         self.key_handler = dict()
         self.source = source
+        self.base_class_endian = base_class_endian
         self._register_default_handler()
 
     @staticmethod
@@ -70,7 +71,7 @@ class DefaultValuePopulator():
 
     def handle_meta(self, val) -> None:
         # Default to system endian if not specified
-        val.setdefault("endian", "be" if sys.byteorder == "big" else "le")
+        val.setdefault("endian", self.base_class_endian)
 
     def handle_doc(self, val) -> None:
         pass
@@ -106,7 +107,7 @@ class DefaultValuePopulator():
     def handle_types(self, val):
         for type_name, type_entry in val.items():
             type_entry.setdefault("meta", {"id": type_name})
-            DefaultValuePopulator(type_entry).populate_default()
+            DefaultValuePopulator(type_entry, self.base_class_endian).populate_default()
 
     def handle_instances(self, val):
         pass
