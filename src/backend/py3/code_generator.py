@@ -17,6 +17,9 @@ class Python3CodeGenerator(Generator):
 
     KS_HELPER_INSTANCE = "ks_helper"  # Defined in _99_global_obj.py
 
+    KEYS_WITH_EXPRESSION = ["size"]
+    # REGEX_KEY_WITH_EXPRESSION = [r"\-fz\-process\-.+"]
+
     CHECKSUM_FN_NAME_MAP = {
         "-fz-process-crc32": "crc32",
         "-fz-process-md5": "md5",
@@ -95,19 +98,62 @@ class Python3CodeGenerator(Generator):
         return " ".join(cleaned_expression)
 
     @staticmethod
-    def _transpile_lambda(expression: str) -> str:
-        raise NotImplementedError
-        return expression
+    def _transpile_ternary(expression: str) -> str:
+        last_quote_type = None
+        ternary_question_mark_pos = None
+        ternary_colon_pos = None
+        for i, c in enumerate(expression):
+            if last_quote_type is None and (c == "\"" or c == "'"):
+                if i > 0 and expression[i - 1] == "\\":
+                    # Escaped quote
+                    continue
+                else:
+                    # Opening quote
+                    last_quote_type = c
+                    continue
+            elif last_quote_type == c:
+                # Closing quote
+                last_quote_type = None
+                continue
+            if last_quote_type is None and c == "?":
+                if ternary_question_mark_pos is None:
+                    ternary_question_mark_pos = i
+                else:
+                    raise ValueError("Stray `?` in ternary?")
+            elif last_quote_type is None and ternary_question_mark_pos is not None and c == ":":
+                if ternary_colon_pos is None:
+                    ternary_colon_pos = i
+                else:
+                    raise ValueError("Stray `:` in ternary?")
+
+        if last_quote_type is not None:
+            raise ValueError("Unmatched quote in ternary")
+        elif ternary_question_mark_pos is None:
+            # Not a ternary
+            return expression
+        elif ternary_colon_pos is None:
+            raise ValueError("Invalid ternary syntax")
+
+        condition = expression[:ternary_question_mark_pos]
+        if_true = expression[ternary_question_mark_pos + 1: ternary_colon_pos]
+        if_false = expression[ternary_colon_pos + 1:]
+        return f"{if_true} if {condition} else {if_false}"
 
     @classmethod
     def _expression_transpiler(cls, available_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
+        if not isinstance(expression, str):  # Do not process anything other than string (int, list etc.)
+            return expression
         expression = cls._transpile_namespace(expression)
         if produce_bytes:
             expression = cls._transpile_local_ref_to_bytes(
                 available_ref, expression)
         else:
             expression = cls._transpile_local_ref(available_ref, expression)
+        expression = cls._transpile_ternary(expression)
         return expression
+
+    # def _process_expression_in_seq(self):
+    #     pass
 
     def write_file_from_include_dir(self) -> None:
         """Write the contents of the files in the 'include' directory to the specified output"""
@@ -374,7 +420,9 @@ class Python3CodeGenerator(Generator):
 
         fz_process_key = None
         for key in seq_entry.keys():
-            if re.fullmatch(r"\-fz\-process\-.+", key):
+            if key in self.KEYS_WITH_EXPRESSION:
+                seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key])
+            elif re.fullmatch(r"\-fz\-process\-.+", key):
                 fz_process_key = key
                 break
 
