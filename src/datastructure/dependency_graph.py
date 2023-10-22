@@ -53,8 +53,10 @@ class DependencyGraph():
                     queue.append(dependee)
             result.append(curr_node)
 
-        assert len(
-            result) == self.num_nodes, "Length of result does not match the number of dependencies. Do you have a circular reference?"
+        if len(result) != self.num_nodes:
+            raise AssertionError(
+                "Length of result does not match the number of dependencies. Do you have a circular reference?")
+
         return result
 
     def __repr__(self) -> str:
