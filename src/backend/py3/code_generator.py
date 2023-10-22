@@ -438,7 +438,13 @@ class Python3CodeGenerator(Generator):
             if re.fullmatch(r"\-fz\-process\-.+", key):
                 fz_process_key = key
 
-        if "repeat" in seq_entry:
+        if "-fz-attr-len" in seq_entry:
+            expression = seq_entry["-fz-attr-len"]
+            indenter.append_line(
+                f"self.{entry_name} = len({expression})",
+                code
+            )
+        elif "repeat" in seq_entry:
             seq_class_name = sanitiser.sanitise_class_name(seq_entry["type"])
             indenter.append_line(
                 f"self.{entry_name} = []",
