@@ -9,6 +9,7 @@ class DependencyGraph():
 
     def __init__(self):
         self.nodes: Set[DependencyGraphNode[_T]] = set()
+        self.num_nodes = 0
 
     def _copy(self) -> DependencyGraph:
         new_graph = DependencyGraph()
@@ -27,6 +28,7 @@ class DependencyGraph():
 
     def add_node(self, node: DependencyGraphNode[_T]) -> None:
         self.nodes.add(node)
+        self.num_nodes += 1
 
     def add_nodes(self, nodes: Iterable[DependencyGraphNode[_T]]) -> None:
         for node in nodes:
@@ -51,6 +53,8 @@ class DependencyGraph():
                     queue.append(dependee)
             result.append(curr_node)
 
+        assert len(
+            result) == self.num_nodes, "Length of result does not match the number of dependencies. Do you have a circular reference?"
         return result
 
     def __repr__(self) -> str:
