@@ -1,5 +1,6 @@
 meta:
   id: checksum_test
+  endian: le
 
 seq:
   - id: content
