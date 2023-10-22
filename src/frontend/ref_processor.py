@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 import re
 from datastructure.dependency_graph import DependencyGraph, DependencyGraphNode
 from utils.types import VALID_BASE_TYPE_VAL
@@ -8,14 +8,36 @@ from utils.const import OPERATORS, KEY_WITH_EXPRESSION, KEY_WITH_EXPRESSION_PROD
 class RefProcessor():
     """Do processing on references"""
 
-    REFERENCE_KEYS = set(KEY_WITH_EXPRESSION).union(KEY_WITH_EXPRESSION_PRODUCE_BYTES)
+    REFERENCE_KEYS = set(KEY_WITH_EXPRESSION).union(
+        KEY_WITH_EXPRESSION_PRODUCE_BYTES)
 
     def __init__(self, source: dict[str, Any]):
         self.source = source
 
+    def _breakdown_expression_to_components(self, expression: Any) -> List[str]:
+        if not isinstance(expression, str):
+            return []
+        # Replace all operators with whitespace
+        for op in OPERATORS:
+            expression = expression.replace(op, " ")
+        # Split into components based on whitespace
+        expr_components = expression.split()
+        return list(filter(lambda s: len(s) > 0, expr_components))
+
+    def _get_valid_references(self, expression: Any, available_ref: List[str]) -> List[str]:
+        components = self._breakdown_expression_to_components(expression)
+        return list(filter(lambda component: component in available_ref, components))
+
+    def _key_can_contain_expression(self, key: str) -> bool:
+        for regex_ref_key in self.REFERENCE_KEYS:
+            if re.fullmatch(regex_ref_key, key) is not None:
+                return True
+        return False
+
     def _construct_dependency_graph(self) -> None:
         dependency_graph = DependencyGraph()
         self.source["_dependency_graph"] = dependency_graph
+
         nodes = {}
         # Initialise a node for every local reference available
         for seq_entry in self.source["seq"]:
@@ -23,32 +45,31 @@ class RefProcessor():
             nodes[seq_entry_id] = DependencyGraphNode(seq_entry_id)
         dependency_graph.add_nodes(nodes.values())
 
-        available_ref = nodes.keys()
+        available_ref = list(nodes.keys())
         # Link dependencies
         for seq_entry in self.source["seq"]:
+            # print(f"{seq_entry}", file=sys.stderr)
             seq_entry_id = seq_entry["id"]
             is_custom_type = seq_entry["type"] not in VALID_BASE_TYPE_VAL
-            for regex_ref_key in self.REFERENCE_KEYS:
-                ref_key = None
-                for seq_entry_key in seq_entry:
-                    ref_key = re.fullmatch(regex_ref_key, seq_entry_key)
-                    if ref_key is not None:
-                        ref_key = ref_key.string
-                        break
-                if ref_key is None or (is_custom_type and ref_key == "size"):
-                    # Ignore size if is custom type, size determined by size of custom type
+            is_switch_custom_type = isinstance(seq_entry["type"], dict)
+            # If type is a `switch-on` statement
+            if is_switch_custom_type:
+                components = self._get_valid_references(
+                    seq_entry["type"]["switch-on"], available_ref)
+                for component in components:
+                    # print(f"{seq_entry_id} ⭠ {component}", file=sys.stderr)
+                    nodes[seq_entry_id].depends_on(nodes[component])
+            # Go through each key in a sequence entry
+            for seq_entry_key in seq_entry:
+                # Ignore size if is custom type, size determined by size of custom type
+                if (is_custom_type and seq_entry_key == "size") or not self._key_can_contain_expression(seq_entry_key):
                     continue
-                expression = seq_entry[ref_key]
-                if not isinstance(expression, str):  # Only strings can be expression
-                    continue
-                # Replace all operators with whitespace
-                for op in OPERATORS:
-                    expression.replace(op, " ")
-                expr_components = expression.split()
-                # Split into components based on whitespace
-                for component in expr_components:
-                    if component in available_ref:
-                        nodes[seq_entry_id].depends_on(nodes[component])
+                seq_entry_value = seq_entry[seq_entry_key]
+                components = self._get_valid_references(
+                    seq_entry_value, available_ref)
+                for component in components:
+                    # print(f"{seq_entry_id} ⭠ {component}", file=sys.stderr)
+                    nodes[seq_entry_id].depends_on(nodes[component])
 
     def _construct_available_ref(self) -> None:
         self.source["_available_ref"] = []
