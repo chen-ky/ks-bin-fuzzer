@@ -189,12 +189,12 @@ class ValueCodeGenerator():
     def gen_strz_fn(self, n_bytes: int, encoding: Optional[str] = "UTF-8", terminator: None = None) -> str:
         return self.gen_str_fn(n_bytes=n_bytes, encoding=encoding, terminator=0)
 
-    def gen_enum_fn(self, enum_name: str):
+    def gen_enum_fn(self, enum_name: str) -> str:
         fn_name = "rand_choice"
         fn_args = f"(list({sanitiser.sanitise_class_name(enum_name)}))"
         return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
-    def gen_custom_type(self, type_name: str):
+    def gen_custom_type(self, type_name: str) -> str:
         type_name = sanitiser.sanitise_class_name(type_name)
         return f"{type_name}(_parent=self, _root=self._root)"
 
