@@ -3,6 +3,8 @@ from backend.generator import Generator
 from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
 from utils.types import SeqEntry, VerboseEnumClassEntry
+from utils.const import KEY_WITH_EXPRESSION, KEY_WITH_EXPRESSION_PRODUCE_BYTES
+from datastructure.dependency_graph import DependencyGraph
 from .value_code_generator import ValueCodeGenerator
 import re
 
@@ -16,9 +18,6 @@ import sys
 class Python3CodeGenerator(Generator):
 
     KS_HELPER_INSTANCE = "ks_helper"  # Defined in _99_global_obj.py
-
-    KEYS_WITH_EXPRESSION = ["size"]
-    # REGEX_KEY_WITH_EXPRESSION = [r"\-fz\-process\-.+"]
 
     CHECKSUM_FN_NAME_MAP = {
         "-fz-process-crc32": "crc32",
@@ -180,8 +179,9 @@ class Python3CodeGenerator(Generator):
         doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
         available_ref = self.ir.source["_available_ref"]
+        dependency_graph = self.ir.source["_dependency_graph"]
         self.output.writelines(
-            self.generate_class(meta_val, seq_val, doc_val, available_ref)
+            self.generate_class(meta_val, seq_val, doc_val, available_ref, dependency_graph)
         )
 
     def write_types(self) -> None:
@@ -192,8 +192,9 @@ class Python3CodeGenerator(Generator):
             doc_val = meta_val["doc"]
             seq_val = meta_val["seq"]
             available_ref = meta_val["_available_ref"]
+            dependency_graph = meta_val["_dependency_graph"]
             self.output.writelines(
-                self.generate_class(meta_val, seq_val, doc_val, available_ref)
+                self.generate_class(meta_val, seq_val, doc_val, available_ref, dependency_graph)
             )
 
     def write_enums(self) -> None:
@@ -243,7 +244,7 @@ class Python3CodeGenerator(Generator):
         code.append("")
         return code
 
-    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], available_ref: List[str]) -> List[str]:
+    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = []
         indenter.append_lines([
@@ -254,7 +255,15 @@ class Python3CodeGenerator(Generator):
             "    self._cached = False",
         ], code)
         indenter.indent()
-        for seq_entry in seq:
+        # Generate data for each field taking into account dependencies on each other
+        for dependency_node in dependency_graph.linearise_graph():
+            seq_entry = None
+            for entry in seq:
+                if dependency_node.data == entry["id"]:
+                    seq_entry = entry
+            if seq_entry is None:
+                raise ValueError(f"Invalid reference `{dependency_node.data}`.")
+        # for seq_entry in seq:
             indenter.append_lines(self.generate_seq_entry(
                 class_name, seq_entry, available_ref), code)
         indenter.append_line("", code)
@@ -357,8 +366,7 @@ class Python3CodeGenerator(Generator):
         indenter = Indenter(add_newline=True)
         code = []
         entry_name = seq_entry["id"]
-        expression = self._expression_transpiler(
-            available_ref, seq_entry[fz_process_key], produce_bytes=True)
+        expression = seq_entry[fz_process_key]
         if fz_process_key in self.CHECKSUM_FN_NAME_MAP.keys():
             fn_name = self.CHECKSUM_FN_NAME_MAP[fz_process_key]
             indenter.append_line(
@@ -367,7 +375,7 @@ class Python3CodeGenerator(Generator):
             raise ValueError(f"Unknown key: '{fz_process_key}'")
         return code
 
-    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str]) -> List[str]:
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
@@ -379,7 +387,7 @@ class Python3CodeGenerator(Generator):
             indenter.append_lines(self.generate_doc(doc), code)
         indenter.append_lines(self.generate_class_static_var(seq), code)
         indenter.append_lines(
-            self.generate_class_init_method(class_name, seq, available_ref), code)
+            self.generate_class_init_method(class_name, seq, available_ref, dependency_graph), code)
         indenter.append_lines(self.generate_seq_to_bytes_method(seq), code)
 
         indenter.append_lines([
@@ -419,12 +427,16 @@ class Python3CodeGenerator(Generator):
         code = []
 
         fz_process_key = None
+        # Process expression
         for key in seq_entry.keys():
-            if key in self.KEYS_WITH_EXPRESSION:
-                seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key])
-            elif re.fullmatch(r"\-fz\-process\-.+", key):
+            for regex_key in KEY_WITH_EXPRESSION:
+                if re.fullmatch(regex_key, key) is not None:
+                    seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key])
+            for regex_key in KEY_WITH_EXPRESSION_PRODUCE_BYTES:
+                if re.fullmatch(regex_key, key) is not None:
+                    seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key], produce_bytes=True)
+            if re.fullmatch(r"\-fz\-process\-.+", key):
                 fz_process_key = key
-                break
 
         if "repeat" in seq_entry:
             seq_class_name = sanitiser.sanitise_class_name(seq_entry["type"])
@@ -439,6 +451,7 @@ class Python3CodeGenerator(Generator):
                 loop_conditions = seq_entry["repeat-until"].replace(
                     "_io.eof", "False")
                 indenter.append_lines([
+                    # Do while loop
                     "while True:",
                     f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
                     f"    self.{entry_name}.append(_)",
