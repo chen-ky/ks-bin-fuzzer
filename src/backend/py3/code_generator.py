@@ -37,7 +37,7 @@ class Python3CodeGenerator(Generator):
         self.ir = ir
         self.output = output
 
-        self.base_type_code_generator = ValueCodeGenerator(
+        self.type_code_generator = ValueCodeGenerator(
             ks_helper_instance_name=self.KS_HELPER_INSTANCE)
 
         self.logger = logging.Logger(__name__)
@@ -140,7 +140,8 @@ class Python3CodeGenerator(Generator):
 
     @classmethod
     def _expression_transpiler(cls, available_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
-        if not isinstance(expression, str):  # Do not process anything other than string (int, list etc.)
+        # Do not process anything other than string (int, list etc.)
+        if not isinstance(expression, str):
             return expression
         expression = cls._transpile_namespace(expression)
         if produce_bytes:
@@ -181,7 +182,8 @@ class Python3CodeGenerator(Generator):
         available_ref = self.ir.source["_available_ref"]
         dependency_graph = self.ir.source["_dependency_graph"]
         self.output.writelines(
-            self.generate_class(meta_val, seq_val, doc_val, available_ref, dependency_graph)
+            self.generate_class(meta_val, seq_val, doc_val,
+                                available_ref, dependency_graph)
         )
 
     def write_types(self) -> None:
@@ -194,7 +196,8 @@ class Python3CodeGenerator(Generator):
             available_ref = meta_val["_available_ref"]
             dependency_graph = meta_val["_dependency_graph"]
             self.output.writelines(
-                self.generate_class(meta_val, seq_val, doc_val, available_ref, dependency_graph)
+                self.generate_class(meta_val, seq_val, doc_val,
+                                    available_ref, dependency_graph)
             )
 
     def write_enums(self) -> None:
@@ -262,7 +265,8 @@ class Python3CodeGenerator(Generator):
                 if dependency_node.data == entry["id"]:
                     seq_entry = entry
             if seq_entry is None:
-                raise ValueError(f"Invalid reference `{dependency_node.data}`.")
+                raise ValueError(
+                    f"Invalid reference `{dependency_node.data}`.")
         # for seq_entry in seq:
             indenter.append_lines(self.generate_seq_entry(
                 class_name, seq_entry, available_ref), code)
@@ -362,7 +366,7 @@ class Python3CodeGenerator(Generator):
             indenter.unindent()
         return code
 
-    def generate_fz_process_code(self, fz_process_key: str, class_name: str, seq_entry: SeqEntry, available_ref: List[str]) -> List[str]:
+    def generate_fz_process_code(self, fz_process_key: str, class_name: str, seq_entry: SeqEntry) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = []
         entry_name = seq_entry["id"]
@@ -373,6 +377,17 @@ class Python3CodeGenerator(Generator):
                 f"self.{entry_name} = {fn_name}({expression})", code)
         else:
             raise ValueError(f"Unknown key: '{fz_process_key}'")
+        return code
+
+    def generate_switch_type(self, entry_name: str, match_on: str, cases: dict[str, str]) -> List[str]:
+        indenter = Indenter(add_newline=True)
+        code = indenter.apply(f"match {match_on}:")
+        indenter.indent()
+        for match_value, type_name in cases.items():
+            indenter.append_lines([
+                f"case {match_value}:",
+                f"    self.{entry_name} = {self.type_code_generator.generate_code(type=type_name)}",
+            ], code)
         return code
 
     def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
@@ -413,7 +428,7 @@ class Python3CodeGenerator(Generator):
 
         indenter.append_lines([
             "def __len__(self) -> int:",
-            "    return len(self._io)",
+            "    return len(self.result())",
         ], code)
         indenter.reset()
         indenter.append_line("\n", code)
@@ -431,12 +446,22 @@ class Python3CodeGenerator(Generator):
         for key in seq_entry.keys():
             for regex_key in KEY_WITH_EXPRESSION:
                 if re.fullmatch(regex_key, key) is not None:
-                    seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key])
+                    seq_entry[key] = self._expression_transpiler(
+                        available_ref, seq_entry[key])
             for regex_key in KEY_WITH_EXPRESSION_PRODUCE_BYTES:
                 if re.fullmatch(regex_key, key) is not None:
-                    seq_entry[key] = self._expression_transpiler(available_ref, seq_entry[key], produce_bytes=True)
+                    seq_entry[key] = self._expression_transpiler(
+                        available_ref, seq_entry[key], produce_bytes=True)
             if re.fullmatch(r"\-fz\-process\-.+", key):
                 fz_process_key = key
+        # Process expression in a `type` block
+        if isinstance(seq_entry["type"], dict):
+            type_block = seq_entry["type"]
+            for key in type_block.keys():
+                for regex_key in KEY_WITH_EXPRESSION:
+                    if re.fullmatch(regex_key, key) is not None:
+                        type_block[key] = self._expression_transpiler(
+                            available_ref, type_block[key])
 
         if "-fz-attr-len" in seq_entry:
             expression = seq_entry["-fz-attr-len"]
@@ -488,10 +513,16 @@ class Python3CodeGenerator(Generator):
             )
         elif fz_process_key is not None:
             indenter.append_lines(self.generate_fz_process_code(
-                fz_process_key, class_name, seq_entry, available_ref), code)
+                fz_process_key, class_name, seq_entry), code)
+        elif isinstance(seq_entry["type"], dict):
+            # Switch on type
+            match_on = seq_entry["type"]["switch-on"]
+            cases = seq_entry["type"]["cases"]
+            indenter.append_lines(self.generate_switch_type(
+                entry_name, match_on, cases), code)
         else:
             indenter.append_line(
-                f"self.{entry_name} = {self.base_type_code_generator.generate_code(**seq_entry)}",
+                f"self.{entry_name} = {self.type_code_generator.generate_code(**seq_entry)}",
                 code
             )
         return code
