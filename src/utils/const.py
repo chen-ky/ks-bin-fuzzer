@@ -20,15 +20,6 @@ BITWISE_OPERATORS = ("<<", ">>", "&", "|", "^")
 LOGICAL_OPERATORS = ("not", "and", "or")
 OPERATORS = tuple(set().union(ARITHMETIC_OPERATORS, STRING_OPERATORS,
                               RELATIONAL_OPERATORS, BITWISE_OPERATORS, LOGICAL_OPERATORS))
-# METHODS=("to_s", "to_i", "length")
 
-# re.split(r"[ \-\+\*/]", "asdf + atr-aghf*sdf/dasf".replace(string.whitespace, ""))
-# "asdf + atr-aghf*sdf/dasf".replace(string.whitespace, "")
-# a="asdf + atr-aghf*sdf/dasf"
-# a.replace(" ", "")
-# re.sub.__doc__
-# a.split()
-# "".join(a.split())
-# a
-# a="asdf + atr\t -        aghf\r\n*sdf/dasf"
-# "".join(a.split())
+KEY_WITH_EXPRESSION = ["size", "-fz-attr-len"]
+KEY_WITH_EXPRESSION_PRODUCE_BYTES = [r"\-fz\-process\-.+"]

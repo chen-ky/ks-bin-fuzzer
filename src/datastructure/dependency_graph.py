@@ -53,6 +53,12 @@ class DependencyGraph():
 
         return result
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __str__(self) -> str:
+        return self.linearise_graph().__str__()
+
 
 class DependencyGraphNode():
 
@@ -78,3 +84,9 @@ class DependencyGraphNode():
 
     def has_dependents(self) -> bool:
         return len(self.dependents) > 0
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def __str__(self) -> str:
+        return self.data.__str__()
