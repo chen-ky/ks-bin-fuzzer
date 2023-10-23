@@ -463,21 +463,29 @@ class Python3CodeGenerator(Generator):
                 code
             )
             repeat_type = seq_entry["repeat"]
-            if repeat_type == "until":
-                # loop_conditions = seq_entry["repeat-until"].replace("_io.eof", "self._io.is_eos()")
-                # Ignore eos/eof for now
-                loop_conditions = seq_entry["repeat-until"].replace(
-                    "_io.eof", "False")
-                indenter.append_lines([
-                    # Do while loop
-                    "while True:",
-                    f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
-                    f"    self.{entry_name}.append(_)",
-                    f"    if ({loop_conditions}):",
-                    "        break",
-                ], code)
-            else:
-                raise NotImplementedError("Loop type not implemented")
+            match repeat_type:
+                case "until":
+                    # loop_conditions = seq_entry["repeat-until"].replace("_io.eof", "self._io.is_eos()")
+                    # Ignore eos/eof for now
+                    loop_conditions = seq_entry["repeat-until"].replace(
+                        "_io.eof", "False")
+                    indenter.append_lines([
+                        # Do while loop
+                        "while True:",
+                        f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
+                        f"    self.{entry_name}.append(_)",
+                        f"    if ({loop_conditions}):",
+                        "        break",
+                    ], code)
+                case "expr":
+                    loop_conditions = f'int({seq_entry["repeat-expr"]})'
+                    indenter.append_lines([
+                        f"for _i in range({loop_conditions}):",
+                        f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
+                        f"    self.{entry_name}.append(_)",
+                    ], code)
+                case _:
+                    raise NotImplementedError("Unknown loop type")
         elif "-fz-order" in seq_entry:
             indenter.append_line(
                 f"self.{entry_name} = {class_name}.{entry_name}.pop(0)",
