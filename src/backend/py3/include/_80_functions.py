@@ -44,3 +44,7 @@ def sha3_384(data: bytes) -> bytes:
 
 def sha3_512(data: bytes) -> bytes:
     return hashlib.sha3_512(data).digest()
+
+
+def zlib_(data: bytes) -> bytes:
+    return zlib.compress(data)

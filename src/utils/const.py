@@ -21,5 +21,7 @@ LOGICAL_OPERATORS = ("not", "and", "or")
 OPERATORS = tuple(set().union(ARITHMETIC_OPERATORS, STRING_OPERATORS,
                               RELATIONAL_OPERATORS, BITWISE_OPERATORS, LOGICAL_OPERATORS))
 
-KEY_WITH_EXPRESSION = ["size", "-fz-attr-len", "switch-on"]
+VALID_PROCESS_KEY_VALUE = ["zlib"]
+
+KEY_WITH_EXPRESSION = ["size", "-fz-attr-len", "switch-on", "repeat-expr"]
 KEY_WITH_EXPRESSION_PRODUCE_BYTES = [r"\-fz\-process\-.+"]
