@@ -18,7 +18,8 @@ class EnumProcessor():
                     enum_class_items[enum_int_key] = {"id": enum_val}
         custom_types = self.source.get("types")
         if custom_types is not None:
-            EnumProcessor(custom_types).pre_process()
+            for custom_type_src in custom_types.values():
+                EnumProcessor(custom_type_src).pre_process()
 
     def post_process(self):
         pass
