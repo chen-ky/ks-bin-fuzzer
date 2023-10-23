@@ -28,4 +28,4 @@ class Frontend():
         self.run_preprocessor()
         self.populate_default_value()
         self.run_postprocessor()
-        return IntermediateRepresentation(self.source)
+        return IntermediateRepresentation(self.source, self.source["meta"]["id"])

@@ -32,7 +32,7 @@ def main(argv: List[str]) -> int:
         shutil.rmtree(DEFAULT_OUTPUT_DIR)
     DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output = open(DEFAULT_OUTPUT_FILE, "w")
-    code_gen = Python3CodeGenerator(ir, output)
+    code_gen = Python3CodeGenerator(ir, output, is_entry_point=True)
     code_gen.generate_code()
     output.close()
 

@@ -33,9 +33,10 @@ class Python3CodeGenerator(Generator):
         "-fz-process-sha3-512": "sha3_512",
     }
 
-    def __init__(self, ir: IntermediateRepresentation, output: StringIO) -> None:
+    def __init__(self, ir: IntermediateRepresentation, output: StringIO, is_entry_point: bool = False) -> None:
         self.ir = ir
         self.output = output
+        self.is_entry_point = is_entry_point
 
         self.type_code_generator = ValueCodeGenerator(
             ks_helper_instance_name=self.KS_HELPER_INSTANCE)
@@ -175,7 +176,7 @@ class Python3CodeGenerator(Generator):
                 # Add 2 new lines after every include
                 self.output.write("\n\n")
 
-    def write_base_object_class(self) -> None:
+    def write_class(self) -> None:
         meta_val = self.ir.source["meta"]
         doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
@@ -185,20 +186,6 @@ class Python3CodeGenerator(Generator):
             self.generate_class(meta_val, seq_val, doc_val,
                                 available_ref, dependency_graph)
         )
-
-    def write_types(self) -> None:
-        types_val = self.ir.source["types"]
-        for t_name, t_val in types_val.items():
-            meta_val = t_val
-            meta_val["id"] = t_name
-            doc_val = meta_val["doc"]
-            seq_val = meta_val["seq"]
-            available_ref = meta_val["_available_ref"]
-            dependency_graph = meta_val["_dependency_graph"]
-            self.output.writelines(
-                self.generate_class(meta_val, seq_val, doc_val,
-                                    available_ref, dependency_graph)
-            )
 
     def write_enums(self) -> None:
         enums = self.ir.source["enums"]
@@ -490,7 +477,7 @@ class Python3CodeGenerator(Generator):
                     "        break",
                 ], code)
             else:
-                raise NotImplementedError
+                raise NotImplementedError("Loop type not implemented")
         elif "-fz-order" in seq_entry:
             indenter.append_line(
                 f"self.{entry_name} = {class_name}.{entry_name}.pop(0)",
@@ -543,8 +530,14 @@ class Python3CodeGenerator(Generator):
         # import json
         # self.logger.debug(json.dumps(self.ir.source, indent=2))
         self.logger.debug(self.ir.source)
-        self.write_file_from_include_dir()
+        if self.is_entry_point:
+            self.write_file_from_include_dir()
         self.write_enums()
-        self.write_base_object_class()
-        self.write_types()
-        self.write_entry_point()
+        self.write_class()
+        for t_val in self.ir.source["types"].values():
+            # Recursively generate code for subtypes
+            ir = IntermediateRepresentation(t_val, self.ir.entry_point_class_name)
+            code_gen = Python3CodeGenerator(ir, self.output, is_entry_point=False)
+            code_gen.generate_code()
+        if self.is_entry_point:
+            self.write_entry_point()
