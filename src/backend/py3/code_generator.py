@@ -371,14 +371,14 @@ class Python3CodeGenerator(Generator):
             raise ValueError(f"Unknown key: '{fz_process_key}'")
         return code
 
-    def generate_switch_type(self, entry_name: str, match_on: str, cases: dict[str, str]) -> List[str]:
+    def generate_switch_type(self, assign_to: str, match_on: str, cases: dict[str, str]) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = indenter.apply(f"match {match_on}:")
         indenter.indent()
         for match_value, type_name in cases.items():
             indenter.append_lines([
                 f"case {match_value}:",
-                f"    self.{entry_name} = {self.type_code_generator.generate_code(type=type_name)}",
+                f"    {assign_to} = {self.type_code_generator.generate_code(type=type_name)}",
             ], code)
         return code
 
@@ -448,12 +448,18 @@ class Python3CodeGenerator(Generator):
                 fz_process_key = key
         # Process expression in a `type` block
         if isinstance(seq_entry["type"], dict):
-            type_block = seq_entry["type"]
+            type_block: dict = seq_entry["type"]
             for key in type_block.keys():
                 for regex_key in KEY_WITH_EXPRESSION:
                     if re.fullmatch(regex_key, key) is not None:
                         type_block[key] = self._expression_transpiler(
                             available_ref, type_block[key])
+            if "switch-on" in type_block:
+                new_cases = dict()
+                for k, v in type_block["cases"].items():
+                    new_cases[self._expression_transpiler(
+                        available_ref, k)] = v
+                type_block["cases"] = new_cases
 
         if "-fz-attr-len" in seq_entry:
             expression = seq_entry["-fz-attr-len"]
@@ -462,11 +468,22 @@ class Python3CodeGenerator(Generator):
                 code
             )
         elif "repeat" in seq_entry:
-            seq_class_name = sanitiser.sanitise_class_name(seq_entry["type"])
             indenter.append_line(
                 f"self.{entry_name} = []",
                 code
             )
+            # Handle switch-on combined with repeat
+            if isinstance(seq_entry["type"], dict):
+                match_on = seq_entry["type"]["switch-on"]
+                cases = seq_entry["type"]["cases"]
+                code_to_initialise_object = ["_ = None"]
+                code_to_initialise_object.extend(
+                    self.generate_switch_type("_", match_on, cases))
+            else:
+                seq_class_name = sanitiser.sanitise_class_name(
+                    seq_entry["type"])
+                code_to_initialise_object = [
+                    f"_ = {seq_class_name}(_parent=self, _root=self._root)"]
             repeat_type = seq_entry["repeat"]
             match repeat_type:
                 case "until":
@@ -474,21 +491,22 @@ class Python3CodeGenerator(Generator):
                     # Ignore eos/eof for now
                     loop_conditions = seq_entry["repeat-until"].replace(
                         "_io.eof", "False")
-                    indenter.append_lines([
-                        # Do while loop
-                        "while True:",
-                        f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
+                    # Do while loop
+                    do_while_loop_code = ["while True:"]
+                    for line in code_to_initialise_object:
+                        do_while_loop_code.append(f"    {line}")
+                    do_while_loop_code.extend([
                         f"    self.{entry_name}.append(_)",
                         f"    if ({loop_conditions}):",
-                        "        break",
-                    ], code)
+                        "        break",])
+                    indenter.append_lines(do_while_loop_code, code)
                 case "expr":
                     loop_conditions = f'int({seq_entry["repeat-expr"]})'
-                    indenter.append_lines([
-                        f"for _i in range({loop_conditions}):",
-                        f"    _ = {seq_class_name}(_parent=self, _root=self._root)",
-                        f"    self.{entry_name}.append(_)",
-                    ], code)
+                    for_loop_code = [f"for _i in range({loop_conditions}):",]
+                    for line in code_to_initialise_object:
+                        for_loop_code.append(f"    {line}")
+                    for_loop_code.extend([f"    self.{entry_name}.append(_)",])
+                    indenter.append_lines(for_loop_code, code)
                 case _:
                     raise NotImplementedError("Unknown loop type")
         elif "-fz-order" in seq_entry:
@@ -519,7 +537,7 @@ class Python3CodeGenerator(Generator):
             match_on = seq_entry["type"]["switch-on"]
             cases = seq_entry["type"]["cases"]
             indenter.append_lines(self.generate_switch_type(
-                entry_name, match_on, cases), code)
+                f"self.{entry_name}", match_on, cases), code)
         else:
             indenter.append_line(
                 f"self.{entry_name} = {self.type_code_generator.generate_code(**seq_entry)}",
@@ -549,8 +567,10 @@ class Python3CodeGenerator(Generator):
         self.write_class()
         for t_val in self.ir.source["types"].values():
             # Recursively generate code for subtypes
-            ir = IntermediateRepresentation(t_val, self.ir.entry_point_class_name)
-            code_gen = Python3CodeGenerator(ir, self.output, is_entry_point=False)
+            ir = IntermediateRepresentation(
+                t_val, self.ir.entry_point_class_name)
+            code_gen = Python3CodeGenerator(
+                ir, self.output, is_entry_point=False)
             code_gen.generate_code()
         if self.is_entry_point:
             self.write_entry_point()

@@ -67,7 +67,8 @@ types:
         type: str
         size: 4
         encoding: UTF-8
-        -fz-order: ["IHDR", "IDAT", "IEND"]
+        -fz-order: ["IDAT", "IEND"]
+        # -fz-order: ["IHDR", "IEND"]
       - id: body
         size: len
         type:
@@ -78,28 +79,27 @@ types:
             # '"PLTE"': plte_chunk
             '"IDAT"': idat_chunk
             '"IEND"': iend_chunk
-            # IEND = empty, thus raw
 
-            # Ancillary chunks
-            # '"cHRM"': chrm_chunk
-            # '"gAMA"': gama_chunk
-            # # iCCP
-            # # sBIT
-            # '"sRGB"': srgb_chunk
-            # '"bKGD"': bkgd_chunk
-            # # hIST
-            # # tRNS
-            # '"pHYs"': phys_chunk
-            # # sPLT
-            # '"tIME"': time_chunk
-            # '"iTXt"': international_text_chunk
-            # '"tEXt"': text_chunk
-            # '"zTXt"': compressed_text_chunk
+#             # Ancillary chunks
+#             # '"cHRM"': chrm_chunk
+#             # '"gAMA"': gama_chunk
+#             # # iCCP
+#             # # sBIT
+#             # '"sRGB"': srgb_chunk
+#             # '"bKGD"': bkgd_chunk
+#             # # hIST
+#             # # tRNS
+#             # '"pHYs"': phys_chunk
+#             # # sPLT
+#             # '"tIME"': time_chunk
+#             # '"iTXt"': international_text_chunk
+#             # '"tEXt"': text_chunk
+#             # '"zTXt"': compressed_text_chunk
 
-            # # animated PNG chunks
-            # '"acTL"': animation_control_chunk
-            # '"fcTL"': frame_control_chunk
-            # '"fdAT"': frame_data_chunk
+#             # # animated PNG chunks
+#             # '"acTL"': animation_control_chunk
+#             # '"fcTL"': frame_control_chunk
+#             # '"fdAT"': frame_data_chunk
       - id: crc
         size: 4
         -fz-process-crc32: type + body
@@ -109,18 +109,22 @@ types:
       - id: width
         type: u4
         -fz-range-min: 1
-        -fz-range-max: 255
+        -fz-range-max: 1024
       - id: height
         type: u4
         -fz-range-min: 1
-        -fz-range-max: 255
+        -fz-range-max: 1024
       - id: bit_depth
         type: u1
-        -fz-choice: [8]
+        # -fz-choice: [1, 2, 4, 8]  # For greyscale and greyscale_alpha, does not support bit generation yet, so minimum is 8
+        # -fz-choice: [8]  # For greyscale and greyscale_alpha
+        -fz-choice: [8, 16]  # For truecolor and truecolor_alpha
       - id: color_type
         type: u1
         enum: color_type
-        -fz-choice: [6]
+        # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
+        -fz-choice: [color_type::truecolor_alpha, color_type::truecolor]
+        # -fz-choice: [color_type::greyscale_alpha, color_type::greyscale]
       - id: compression_method
         type: u1
         -fz-choice: [0]
@@ -130,37 +134,63 @@ types:
       - id: interlace_method
         type: u1
         -fz-choice: [0]
-    instances:
-      channel:
-        value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::greyscale ? 2 : 0"
-  # plte_chunk:
-  #   doc-ref: https://www.w3.org/TR/png/#11PLTE
-  #   seq:
-  #     - id: entries
-  #       type: rgb
-  #       repeat: eos
+#     instances:
+#       channel:
+#         value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::greyscale ? 2 : 0"
+  plte_chunk:
+    doc-ref: https://www.w3.org/TR/png/#11PLTE
+    seq:
+      - id: entries
+        type: rgb
+        # repeat: eos
   idat_chunk:
     seq:
       - id: data
         size: _parent.len # This is the size after processing
-        # -fz-size: (_root.ihdr.width * _root.ihdr.height) * ((_root.ihdr.bit_depth / 8) * _root.ihdr.channel) # Size before processing, have to be defined for anything with process?
         type: scanlines
         process: zlib
     types:
       scanlines:
         seq:
           - id: scanline
-            type: scanline
+            type:
+              switch-on: _root.ihdr.color_type
+              cases:
+                color_type::truecolor: truecolor_scanline
+                color_type::truecolor_alpha: truecolor_alpha_scanline
+                color_type::greyscale: greyscale_scanline
+                color_type::greyscale_alpha: greyscale_alpha_scanline
             repeat: expr
             repeat-expr: _root.ihdr.height
         types:
-          scanline:
+          truecolor_scanline:
             seq:
             - id: filter
               type: u1
               -fz-choice: [0]
             - id: data
-              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * _root.ihdr.channel
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 3
+          truecolor_alpha_scanline:
+            seq:
+            - id: filter
+              type: u1
+              -fz-choice: [0]
+            - id: data
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 4
+          greyscale_scanline:
+            seq:
+            - id: filter
+              type: u1
+              -fz-choice: [0]
+            - id: data
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 1
+          greyscale_alpha_scanline:
+            seq:
+            - id: filter
+              type: u1
+              -fz-choice: [0]
+            - id: data
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 2
   iend_chunk:
     seq:
       - id: empty_body
@@ -173,6 +203,17 @@ types:
         type: u1
       - id: b
         type: u1
+  rgba:
+    seq:
+      - id: r
+        type: u1
+      - id: g
+        type: u1
+      - id: b
+        type: u1
+      - id: a
+        type: u1 
+
 enums:
   color_type:
     0: greyscale
