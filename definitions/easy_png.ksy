@@ -67,8 +67,8 @@ types:
         type: str
         size: 4
         encoding: UTF-8
-        -fz-order: ["IDAT", "IEND"]
-        # -fz-order: ["IHDR", "IEND"]
+        # -fz-order: ["IDAT", "IEND"]
+        -fz-order: ["tEXt", "IDAT", "IEND"]
       - id: body
         size: len
         type:
@@ -93,7 +93,7 @@ types:
 #             # # sPLT
 #             # '"tIME"': time_chunk
 #             # '"iTXt"': international_text_chunk
-#             # '"tEXt"': text_chunk
+            '"tEXt"': text_chunk
 #             # '"zTXt"': compressed_text_chunk
 
 #             # # animated PNG chunks
@@ -195,6 +195,26 @@ types:
     seq:
       - id: empty_body
         size: 0
+  text_chunk:
+    doc: |
+      Text chunk effectively allows to store key-value string pairs in
+      PNG container. Both "key" (keyword) and "value" (text) parts are
+      given in pre-defined subset of iso8859-1 without control
+      characters.
+    doc-ref: https://www.w3.org/TR/png/#11tEXt
+    seq:
+      - id: keyword
+        type: strz
+        encoding: iso8859-1
+        doc: Indicates purpose of the following text data.
+        -fz-size-min: 1
+        -fz-size-max: 80
+      - id: text
+        type: str
+        size-eos: true
+        encoding: iso8859-1
+        -fz-size-min: 0
+        -fz-size-max: 2048
   rgb:
     seq:
       - id: r
