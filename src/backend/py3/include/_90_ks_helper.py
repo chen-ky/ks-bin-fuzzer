@@ -124,8 +124,6 @@ class KsHelper:
         return ret.decode(encoding=encoding)
 
     def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[bytes] = None, min_n_bytes: int = 0, max_n_bytes: Optional[int] = None) -> str:
-        if n_bytes <= 0:
-            raise ValueError("Number of bytes must be at least 1.")
         if not encoding.lower().startswith("iso8859"):
             raise ValueError("Invalid ISO 8859 encoding type.")
         if n_bytes < 0 and max_n_bytes is not None:
