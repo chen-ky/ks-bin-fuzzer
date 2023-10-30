@@ -68,7 +68,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-order: ["tEXt", "IDAT", "IEND"]
+        -fz-order: ["tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -94,7 +94,7 @@ types:
 #             # '"tIME"': time_chunk
 #             # '"iTXt"': international_text_chunk
             '"tEXt"': text_chunk
-#             # '"zTXt"': compressed_text_chunk
+            '"zTXt"': compressed_text_chunk
 
 #             # # animated PNG chunks
 #             # '"acTL"': animation_control_chunk
@@ -215,6 +215,27 @@ types:
         encoding: iso8859-1
         -fz-size-min: 0
         -fz-size-max: 2048
+  compressed_text_chunk:
+    doc: |
+      Compressed text chunk effectively allows to store key-value
+      string pairs in PNG container, compressing "value" part (which
+      can be quite lengthy) with zlib compression.
+    doc-ref: https://www.w3.org/TR/png/#11zTXt
+    seq:
+      - id: keyword
+        type: strz
+        encoding: UTF-8
+        doc: Indicates purpose of the following text data.
+        -fz-size-min: 1
+        -fz-size-max: 80
+      - id: compression_method
+        type: u1
+        enum: compression_methods
+      - id: text_datastream
+        process: zlib
+        -fz-size-min: 0
+        -fz-size-max: 2048
+        size-eos: true
   rgb:
     seq:
       - id: r
@@ -241,3 +262,5 @@ enums:
     3: indexed
     4: greyscale_alpha
     6: truecolor_alpha
+  compression_methods:
+    0: zlib
