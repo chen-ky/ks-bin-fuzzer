@@ -1,3 +1,5 @@
+<img style="display: block; margin-left: auto; margin-right: auto;" src='misc/logo.png' width=64px>
+
 # ks-bin-fuzzer
 
 Kaitai Struct compiler to produce format specific binary fuzzer
