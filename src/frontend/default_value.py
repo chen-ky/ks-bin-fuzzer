@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from utils.types import BaseObject, SeqEntry
 from utils import const
 import math
@@ -13,10 +13,15 @@ VALID_BYTE_TYPE_VAL = [None,]
 
 class DefaultValuePopulator():
 
-    def __init__(self, source: dict[str, Any], base_class_endian: str):
+    def __init__(self, source: dict[str, Any], base_class_endian: Optional[str] = None):
         self.key_handler = dict()
         self.source = source
         self.base_class_endian = base_class_endian
+        if self.base_class_endian is None:
+            if "little" == sys.byteorder:
+                self.base_class_endian = "le"
+            else:
+                self.base_class_endian = "be"
         self._register_default_handler()
 
     @staticmethod

@@ -1,6 +1,5 @@
 meta:
   id: checksum_test
-  endian: le
 
 seq:
   - id: content
@@ -13,3 +12,6 @@ seq:
   - id: sha256
     size: 32
     -fz-process-sha256: content + another_content
+  - id: sha3_256
+    size: 32
+    -fz-process-sha3-256: content + another_content
