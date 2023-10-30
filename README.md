@@ -17,6 +17,8 @@ Kaitai Struct compiler to produce format specific binary fuzzer
 | `-fz-order`               | Produce an output in a specific order. Only useful in a loop.                                                                                                                                       |
 | `-fz-range-min`           | Minimum value (inclusive) that can be generated. Only works for numbers.                                                                                                                            |
 | `-fz-range-max`           | Maximum value (inclusive) that can be generated. Only works for numbers.                                                                                                                            |
+| `-fz-size-min`           | Minimum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                                            |
+| `-fz-size-max`           | Maximum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                                            |
 | `-fz-choice`              | Randomly pick an option from the list of choices available.                                                                                                                                         |
 
 ### Algorithms Available

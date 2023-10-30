@@ -105,9 +105,14 @@ class DefaultValuePopulator():
             elif t in VALID_STR_TYPE_VAL:
                 val.setdefault("encoding", "UTF-8")
                 val.setdefault("terminator", None)
+                val.setdefault("size", -1)
+                val.setdefault("-fz-size-min", 0)
+                val.setdefault("-fz-size-max", None)
             elif t in VALID_BYTE_TYPE_VAL:
                 val.setdefault("contents", None)
                 val.setdefault("size", -1)
+                val.setdefault("-fz-size-min", 0)
+                val.setdefault("-fz-size-max", None)
 
     def handle_types(self, val):
         for type_name, type_entry in val.items():

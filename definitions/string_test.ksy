@@ -26,3 +26,15 @@ seq:
     type: strz
     encoding: "iso8859-1"
     size: 11
+  - id: empty
+    type: str
+    encoding: ascii
+    size: 0
+  - id: sep
+    contents: "sep"
+  - id: str6
+    type: strz
+    encoding: utf-8
+    size-eos: true
+    -fz-size-min: 1
+    -fz-size-max: 2

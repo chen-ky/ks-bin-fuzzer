@@ -38,9 +38,16 @@ class KsHelper:
             return 4
         raise ValueError("UTF-8 codepoint out of range")
 
-    def rand_bytes(self, n_bytes: int) -> bytes:
-        if n_bytes <= 0:
-            raise ValueError("Number of bytes must be at least 1.")
+    def rand_bytes(self, n_bytes: int, min_n_bytes: int = 0, max_n_bytes: Optional[int] = None) -> bytes:
+        """Generate `n_bytes` if it is a valid value, otherwise, generate based on `min_n_bytes` and `max_n_bytes`."""
+        if n_bytes < 0 and max_n_bytes is not None:
+            if max_n_bytes < 0:
+                raise ValueError("`max_n_bytes` cannot be less than 0.")
+            if min_n_bytes < 0:
+                raise ValueError("`min_n_bytes` cannot be less than 0.")
+            n_bytes = self.rng.randint(min_n_bytes, max_n_bytes)
+        if n_bytes < 0:
+            raise ValueError("Number of bytes cannot be less than 0.")
         result = bytes()
         C_INT_MAX = 65536
         remaining_bytes = n_bytes
@@ -51,13 +58,21 @@ class KsHelper:
             remaining_bytes -= C_INT_MAX
         return result
 
-    def rand_utf8(self, n_bytes: int, terminator: Optional[bytes] = None) -> str:
-        if n_bytes <= 0:
-            raise ValueError("Number of bytes must be at least 1.")
-        ret = ""
+    def rand_utf8(self, n_bytes: int, terminator: Optional[bytes] = None, min_n_bytes: int = 0, max_n_bytes: Optional[int] = None) -> str:
+        if n_bytes < 0 and max_n_bytes is not None:
+            if max_n_bytes < 0:
+                raise ValueError("`max_n_bytes` cannot be less than 0.")
+            if min_n_bytes < 0:
+                raise ValueError("`min_n_bytes` cannot be less than 0.")
+            n_bytes = self.rng.randint(min_n_bytes, max_n_bytes)
+        if n_bytes < 0:
+            raise ValueError("Number of bytes cannot be less than 0.")
         bytes_remaining = n_bytes
         if terminator is not None:
             bytes_remaining -= 1
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into the specified size.")
+        ret = ""
         while bytes_remaining > 0:
             if bytes_remaining == 1:
                 code_point = self.rng.randint(
@@ -83,14 +98,22 @@ class KsHelper:
             ret += terminator.decode(encoding="utf-8")
         return ret
 
-    def rand_ascii(self, n_bytes: int, terminator: Optional[bytes] = None) -> str:
+    def rand_ascii(self, n_bytes: int, terminator: Optional[bytes] = None, min_n_bytes: int = 0, max_n_bytes: Optional[int] = None) -> str:
         encoding = "ascii"
-        if n_bytes <= 0:
-            raise ValueError("Number of bytes must be at least 1.")
-        ret = b""
+        if n_bytes < 0 and max_n_bytes is not None:
+            if max_n_bytes < 0:
+                raise ValueError("`max_n_bytes` cannot be less than 0.")
+            if min_n_bytes < 0:
+                raise ValueError("`min_n_bytes` cannot be less than 0.")
+            n_bytes = self.rng.randint(min_n_bytes, max_n_bytes)
+        if n_bytes < 0:
+            raise ValueError("Number of bytes cannot be less than 0.")
         bytes_remaining = n_bytes
         if terminator is not None:
             bytes_remaining -= 1
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into the specified size.")
+        ret = b""
         b_length = 1
         while bytes_remaining > 0:
             code_point = self.rng.randint(0, 127)
@@ -100,14 +123,24 @@ class KsHelper:
             ret += terminator
         return ret.decode(encoding=encoding)
 
-    def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[bytes] = None) -> str:
+    def rand_iso8859(self, n_bytes: int, encoding: Literal["ISO8859-1", "ISO8859-2", "ISO8859-3", "ISO8859-4", "ISO8859-5", "ISO8859-6", "ISO8859-7", "ISO8859-8", "ISO8859-9", "ISO8859-10", "ISO8859-11", "ISO8859-13", "ISO8859-14", "ISO8859-15", "ISO8859-16"], terminator: Optional[bytes] = None, min_n_bytes: int = 0, max_n_bytes: Optional[int] = None) -> str:
         if n_bytes <= 0:
             raise ValueError("Number of bytes must be at least 1.")
         if not encoding.lower().startswith("iso8859"):
             raise ValueError("Invalid ISO 8859 encoding type.")
+        if n_bytes < 0 and max_n_bytes is not None:
+            if max_n_bytes < 0:
+                raise ValueError("`max_n_bytes` cannot be less than 0.")
+            if min_n_bytes < 0:
+                raise ValueError("`min_n_bytes` cannot be less than 0.")
+            n_bytes = self.rng.randint(min_n_bytes, max_n_bytes)
+        if n_bytes < 0:
+            raise ValueError("Number of bytes cannot be less than 0.")
         bytes_remaining = n_bytes
         if terminator is not None:
             bytes_remaining -= 1
+            if bytes_remaining < 0:
+                raise ValueError("Terminator cannot fit into the specified size.")
         ret = self.rand_bytes(bytes_remaining)
         if terminator is not None:
             ret += terminator

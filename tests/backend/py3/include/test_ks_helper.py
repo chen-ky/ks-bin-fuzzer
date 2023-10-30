@@ -12,7 +12,8 @@ class TestKsHelper(unittest.TestCase):
     def test_zero_rand_bytes(self):
         inst = KsHelper()
         expected_length = 0
-        self.assertRaises(ValueError, inst.rand_bytes, expected_length)
+        output = inst.rand_bytes(expected_length)
+        self.assertEqual(len(output), expected_length)
 
     def test_large_rand_bytes(self):
         inst = KsHelper()
@@ -42,12 +43,13 @@ class TestKsHelper(unittest.TestCase):
     def test_zero_rand_utf8(self):
         inst = KsHelper()
         expected_length = 0
-        self.assertRaises(ValueError, inst.rand_utf8, expected_length)
+        output = inst.rand_utf8(expected_length)
+        self.assertEqual(len(output), expected_length)
 
     def test_zero_rand_utf8_with_terminator(self):
         inst = KsHelper()
         expected_length = 0
-        terminator = "\t"
+        terminator = "\t".encode(encoding="utf-8")
         self.assertRaises(ValueError, inst.rand_utf8, expected_length, terminator)
 
     def test_large_rand_utf8(self):
@@ -63,7 +65,7 @@ class TestKsHelper(unittest.TestCase):
 
     def test_negative_rand_utf8_with_terminator(self):
         inst = KsHelper()
-        terminator = "a"
+        terminator = "a".encode(encoding="utf-8")
         self.assertRaises(ValueError, inst.rand_utf8, -1, terminator)
 
     # def test_bytes_to_uint(self):
