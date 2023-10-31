@@ -39,7 +39,6 @@ seq:
   # https://www.w3.org/TR/png/#11IHDR
   # Always appears first, stores values referenced by other chunks
   - id: ihdr_len
-    # Pay attention to this, int.to_bytes(13, length=4, byteorder="big", signed=False)
     type: u4
     valid: 13
   - id: ihdr_type
@@ -47,7 +46,6 @@ seq:
   - id: ihdr
     type: ihdr_chunk
   - id: ihdr_crc
-    # int.to_bytes(zlib.crc32(ihdr_type + ihdr), length=4, byteorder="big", signed=False)
     size: 4
     -fz-process-crc32: ihdr_type + ihdr
   # The rest of the chunks
@@ -116,27 +114,28 @@ types:
         -fz-range-max: 1024
       - id: bit_depth
         type: u1
-        # -fz-choice: [1, 2, 4, 8]  # For greyscale and greyscale_alpha, does not support bit generation yet, so minimum is 8
-        # -fz-choice: [8]  # For greyscale and greyscale_alpha
-        -fz-choice: [8, 16]  # For truecolor and truecolor_alpha
+        # -fz-choice: [1, 2, 4, 8, 16]  # For greyscale, does not support bit generation yet, so minimum is 8
+        -fz-choice: [8, 16]  # For truecolor and truecolor_alpha, greyscale_alpha
       - id: color_type
         type: u1
         enum: color_type
-        # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
-        -fz-choice: [color_type::truecolor_alpha, color_type::truecolor]
+        -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
+        # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor]
         # -fz-choice: [color_type::greyscale_alpha, color_type::greyscale]
       - id: compression_method
         type: u1
-        -fz-choice: [0]
+        valid: 0
+        # -fz-choice: [0]
       - id: filter_method
         type: u1
-        -fz-choice: [0]
+        valid: 0
+        # -fz-choice: [0]
       - id: interlace_method
         type: u1
         -fz-choice: [0]
 #     instances:
 #       channel:
-#         value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::greyscale ? 2 : 0"
+#         value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::truecolor ? 3 : color_type == color_type::greyscale_alpha ? 2 : color_type == color_type::greyscale ? 1 : 0"
   plte_chunk:
     doc-ref: https://www.w3.org/TR/png/#11PLTE
     seq:
@@ -167,30 +166,45 @@ types:
             seq:
             - id: filter
               type: u1
-              -fz-choice: [0]
+              enum: scanline_filter
+              # -fz-choice: [0]
+              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 3
           truecolor_alpha_scanline:
             seq:
             - id: filter
               type: u1
-              -fz-choice: [0]
+              enum: scanline_filter
+              # -fz-choice: [0]
+              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 4
           greyscale_scanline:
             seq:
             - id: filter
               type: u1
-              -fz-choice: [0]
+              enum: scanline_filter
+              # -fz-choice: [0]
+              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 1
           greyscale_alpha_scanline:
             seq:
             - id: filter
               type: u1
-              -fz-choice: [0]
+              enum: scanline_filter
+              # -fz-choice: [0]
+              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 2
+        enums:
+          scanline_filter:
+            0: none
+            1: sub
+            2: up
+            3: average
+            4: paeth
   iend_chunk:
     seq:
       - id: empty_body
