@@ -167,8 +167,7 @@ types:
             - id: filter
               type: u1
               enum: scanline_filter
-              # -fz-choice: [0]
-              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
+              # valid: scanline_filter::none
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 3
           truecolor_alpha_scanline:
@@ -176,8 +175,7 @@ types:
             - id: filter
               type: u1
               enum: scanline_filter
-              # -fz-choice: [0]
-              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
+              # valid: scanline_filter::none
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 4
           greyscale_scanline:
@@ -185,8 +183,7 @@ types:
             - id: filter
               type: u1
               enum: scanline_filter
-              # -fz-choice: [0]
-              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
+              # valid: scanline_filter::none
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 1
           greyscale_alpha_scanline:
@@ -194,8 +191,7 @@ types:
             - id: filter
               type: u1
               enum: scanline_filter
-              # -fz-choice: [0]
-              -fz-choice: [scanline_filter::none, scanline_filter::sub, scanline_filter::up, scanline_filter::average, scanline_filter::paeth]
+              # valid: scanline_filter::none
             - id: data
               size: _root.ihdr.width * (_root.ihdr.bit_depth / 8) * 2
         enums:
