@@ -26,7 +26,7 @@ class ValueCodeGenerator():
                 byte_val += content.to_bytes(1)
             else:
                 raise TypeError("Unknown type in `contents` key")
-        return f"{byte_val}"
+        return f"{byte_val!r}"
 
     def gen_bytes_fn(self, n_bytes: int | str, min_n_bytes: Optional[int] = None, max_n_bytes: Optional[int] = None, contents: Optional[str | List[Union[str, int]]] = None) -> str:
         # Fixed bytes
