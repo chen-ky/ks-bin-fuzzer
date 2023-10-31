@@ -120,7 +120,8 @@ class DefaultValuePopulator():
             DefaultValuePopulator(type_entry, self.base_class_endian).populate_default()
 
     def handle_instances(self, val):
-        pass
+        for instance_name, instance_entry in val.items():
+            instance_entry.setdefault("-fz-static", False)
 
     def handle_enums(self, val):
         for enum_class_name, enum_class_items in val.items():

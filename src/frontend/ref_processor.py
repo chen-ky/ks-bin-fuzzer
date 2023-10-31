@@ -43,6 +43,8 @@ class RefProcessor():
         for seq_entry in self.source["seq"]:
             seq_entry_id = seq_entry["id"]
             nodes[seq_entry_id] = DependencyGraphNode(seq_entry_id)
+        for instance_entry_name in self.source["instances"]:
+            nodes[instance_entry_name] = DependencyGraphNode(instance_entry_name)
         dependency_graph.add_nodes(nodes.values())
 
         available_ref = list(nodes.keys())
@@ -70,11 +72,27 @@ class RefProcessor():
                 for component in components:
                     # print(f"{seq_entry_id} ⭠ {component}", file=sys.stderr)
                     nodes[seq_entry_id].depends_on(nodes[component])
+        for instance_name, instance_entry in self.source["instances"].items():
+            if instance_entry["-fz-static"]:
+                # Static object should not depend on other fields
+                continue
+            # Go through each key in a instance entry
+            for instance_entry_key in instance_entry:
+                if not self._key_can_contain_expression(instance_entry_key):
+                    continue
+                instance_entry_value = instance_entry[instance_entry_key]
+                components = self._get_valid_references(
+                    instance_entry_value, available_ref)
+                for component in components:
+                    # print(f"{seq_entry_id} ⭠ {component}", file=sys.stderr)
+                    nodes[instance_name].depends_on(nodes[component])
 
     def _construct_available_ref(self) -> None:
         self.source["_available_ref"] = []
         for seq_entry in self.source["seq"]:
             self.source["_available_ref"].append(seq_entry["id"])
+        for instance_name, instance_entry in self.source["instances"].items():
+            self.source["_available_ref"].append(instance_name)
 
     def pre_process(self):
         pass

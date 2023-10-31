@@ -180,10 +180,11 @@ class Python3CodeGenerator(Generator):
         meta_val = self.ir.source["meta"]
         doc_val = self.ir.source["doc"]
         seq_val = self.ir.source["seq"]
+        instances_val = self.ir.source["instances"]
         available_ref = self.ir.source["_available_ref"]
         dependency_graph = self.ir.source["_dependency_graph"]
         self.output.writelines(
-            self.generate_class(meta_val, seq_val, doc_val,
+            self.generate_class(meta_val, seq_val, instances_val, doc_val,
                                 available_ref, dependency_graph)
         )
 
@@ -222,7 +223,7 @@ class Python3CodeGenerator(Generator):
         indenter.append_line("\n", code)
         return code
 
-    def generate_class_static_var(self, seq: List[SeqEntry]) -> List[str]:
+    def generate_class_static_var(self, seq: List[SeqEntry], instances: dict[dict[str, Any]], available_ref: List[str]) -> List[str]:
         """Handle static variable for a type, such as those using `-fz-order`"""
         indenter = Indenter(add_newline=True)
         code = []
@@ -231,10 +232,14 @@ class Python3CodeGenerator(Generator):
             if generate_order is not None and len(generate_order) > 0:
                 entry_name = seq_entry["id"]
                 indenter.append_line(f"{entry_name} = {generate_order}", code)
+        for instance_name, instance_entry in instances.items():
+            if instance_entry["-fz-static"]:
+                val = self._expression_transpiler(available_ref, instance_entry["value"])
+                indenter.append_line(f"{instance_name} = {val}", code)
         code.append("")
         return code
 
-    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
+    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], instances: dict[str, dict[str, Any]], available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = []
         indenter.append_lines([
@@ -248,15 +253,27 @@ class Python3CodeGenerator(Generator):
         # Generate data for each field taking into account dependencies on each other
         for dependency_node in dependency_graph.linearise_graph():
             seq_entry = None
+            instance_name = None
+            instance_entry = None
             for entry in seq:
                 if dependency_node.data == entry["id"]:
                     seq_entry = entry
+                    break
             if seq_entry is None:
+                for entry_name, entry in instances.items():
+                    if dependency_node.data == entry_name:
+                        instance_entry = entry
+                        instance_name = entry_name
+                        break
+            if seq_entry is None and instance_entry is None:
                 raise ValueError(
                     f"Invalid reference `{dependency_node.data}`.")
         # for seq_entry in seq:
-            indenter.append_lines(self.generate_seq_entry(
-                class_name, seq_entry, available_ref), code)
+            if seq_entry is not None:
+                indenter.append_lines(self.generate_seq_entry(
+                    class_name, seq_entry, available_ref), code)
+            if instance_entry is not None and not instance_entry["-fz-static"]:
+                indenter.append_lines(self.generate_instance_entry(class_name, instance_name, instance_entry, available_ref), code)
         indenter.append_line("", code)
         return code
 
@@ -382,7 +399,7 @@ class Python3CodeGenerator(Generator):
             ], code)
         return code
 
-    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], doc: str, available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], instances: dict[str, dict[str, Any]], doc: str, available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
@@ -392,9 +409,9 @@ class Python3CodeGenerator(Generator):
         indenter.indent()
         if len(doc) > 0:
             indenter.append_lines(self.generate_doc(doc), code)
-        indenter.append_lines(self.generate_class_static_var(seq), code)
+        indenter.append_lines(self.generate_class_static_var(seq, instances, available_ref), code)
         indenter.append_lines(
-            self.generate_class_init_method(class_name, seq, available_ref, dependency_graph), code)
+            self.generate_class_init_method(class_name, seq, instances, available_ref, dependency_graph), code)
         indenter.append_lines(self.generate_seq_to_bytes_method(seq), code)
 
         indenter.append_lines([
@@ -543,6 +560,15 @@ class Python3CodeGenerator(Generator):
                 f"self.{entry_name} = {self.type_code_generator.generate_code(**seq_entry)}",
                 code
             )
+        return code
+
+    def generate_instance_entry(self, class_name: str, instance_name: str, instance_entry: dict[str, Any], available_ref: List[str]) -> List[str]:
+        self.logger.debug(f"Generating instance entry \"{instance_name}\"")
+        indenter = Indenter(add_newline=True)
+        code = []
+
+        val = self._expression_transpiler(available_ref, instance_entry["value"])
+        indenter.append_line(f"self.{instance_name} = {val}", code)
         return code
 
     def generate_entry_point(self) -> List[str]:
