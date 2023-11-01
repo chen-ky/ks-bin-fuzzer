@@ -132,7 +132,7 @@ types:
         # -fz-choice: [0]
       - id: interlace_method
         type: u1
-        -fz-choice: [0]
+        -fz-choice: [0]  # https://www.w3.org/TR/png/#8InterlaceMethods
 #     instances:
 #       channel:
 #         value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::truecolor ? 3 : color_type == color_type::greyscale_alpha ? 2 : color_type == color_type::greyscale ? 1 : 0"
