@@ -39,7 +39,6 @@ seq:
   # https://www.w3.org/TR/png/#11IHDR
   # Always appears first, stores values referenced by other chunks
   - id: ihdr_len
-    # Pay attention to this, int.to_bytes(13, length=4, byteorder="big", signed=False)
     type: u4
     valid: 13
   - id: ihdr_type
@@ -47,7 +46,6 @@ seq:
   - id: ihdr
     type: ihdr_chunk
   - id: ihdr_crc
-    # int.to_bytes(zlib.crc32(ihdr_type + ihdr), length=4, byteorder="big", signed=False)
     size: 4
     -fz-process-crc32: ihdr_type + ihdr
   # The rest of the chunks
