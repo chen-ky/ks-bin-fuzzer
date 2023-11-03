@@ -70,10 +70,10 @@ class DependencyGraphNode():
 
     def __init__(self, data: _T):
         self.data = data
-        self.dependees = set()  # Nodes that are dependent on us (Outgoing edges)
-        self.dependents = set()  # Nodes that we depend on (Incoming edges)
+        self.dependees: Set[DependencyGraphNode[_T]] = set()  # Nodes that are dependent on us (Outgoing edges)
+        self.dependents: Set[DependencyGraphNode[_T]] = set()  # Nodes that we depend on (Incoming edges)
 
-    def depends_on(self, node: DependencyGraphNode):
+    def depends_on(self, node: DependencyGraphNode[_T]):
         self.dependents.add(node)
         node.dependees.add(self)
 
