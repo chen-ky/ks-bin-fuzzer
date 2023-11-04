@@ -16,11 +16,12 @@ Kaitai Struct compiler to produce format specific binary fuzzer
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-fz-process-<algorithm>` | Populate the field with the result of the algorithm (the algorithm will produce bytes type), applied to the specified field. See [here](#algorithms-available) for the list of supported algorithm. |
 | `-fz-attr-len`            | Mark this field as a length field of another field. The value of this field will be automatically populated by the byte length of said field.                                                       |
-| `-fz-order`               | Produce an output in a specific order. Only useful in a loop.                                                                                                                                       |
+| `-fz-order`               | Produce an output in a specific order. The value is populated and removed from the list when a new instance of a type that contains a field with this key is initialised. |
+| `-fz-random-order`        | Produce an output in a random order. The value is populated and removed from the list when a new instance of a type that contains a field with this key is initialised. |
 | `-fz-range-min`           | Minimum value (inclusive) that can be generated. Only works for numbers.                                                                                                                            |
 | `-fz-range-max`           | Maximum value (inclusive) that can be generated. Only works for numbers.                                                                                                                            |
-| `-fz-size-min`           | Minimum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                                            |
-| `-fz-size-max`           | Maximum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                                            |
+| `-fz-size-min`            | Minimum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                       |
+| `-fz-size-max`            | Maximum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                       |
 | `-fz-choice`              | Randomly pick an option from the list of choices available.                                                                                                                                         |
 
 ### Algorithms Available

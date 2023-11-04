@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-order: ["bKGD", "tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-random-order: ["bKGD", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:

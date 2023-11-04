@@ -227,11 +227,17 @@ class Python3CodeGenerator(Generator):
         """Handle static variable for a type, such as those using `-fz-order`"""
         indenter = Indenter(add_newline=True)
         code = []
+        # Handle seq entry
         for seq_entry in seq:
             generate_order = seq_entry.get("-fz-order")
             if generate_order is not None and len(generate_order) > 0:
                 entry_name = seq_entry["id"]
                 indenter.append_line(f"{entry_name} = {generate_order}", code)
+            generate_random_order = seq_entry.get("-fz-random-order")
+            if generate_random_order is not None and len(generate_random_order) > 0:
+                entry_name = seq_entry["id"]
+                indenter.append_line(f"{entry_name} = {generate_random_order}", code)
+        # Handle instances
         for instance_name, instance_entry in instances.items():
             if instance_entry["-fz-static"]:
                 val = self._expression_transpiler(available_ref, instance_entry["value"])
@@ -526,6 +532,13 @@ class Python3CodeGenerator(Generator):
                     indenter.append_lines(for_loop_code, code)
                 case _:
                     raise NotImplementedError("Unknown loop type")
+        elif "-fz-random-order" in seq_entry:
+            fn_name = "rand_int"
+            end_val = f"(0 if (len({class_name}.{entry_name}) - 1) < 0 else (len({class_name}.{entry_name}) - 1))"
+            indenter.append_line(
+                f"self.{entry_name} = {class_name}.{entry_name}.pop({self._ks_helper_fn_call(fn_name, start=0, end=end_val)})",
+                code
+            )
         elif "-fz-order" in seq_entry:
             indenter.append_line(
                 f"self.{entry_name} = {class_name}.{entry_name}.pop(0)",
