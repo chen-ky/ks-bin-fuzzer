@@ -1,6 +1,7 @@
 #!/bin/sh
 
 BUILD_DIR='build'
+EXCLUDE_FILES="pnglibconf.* pngtest.* example.*"
 COVERAGE_REPORT='coverage.csv'
 TEST_COUNT=10000
 
@@ -79,6 +80,7 @@ prepare_cov() {
     cp -P .libs/*.gcda "$BUILD_DIR"/app/
     cp -P .libs/*.gcno "$BUILD_DIR"/app/
     cd "$BUILD_DIR"/app
+    rm -r $EXCLUDE_FILES
     gcov *.c | tee gcov_out.txt | tail -n1 | tee /dev/tty | sed -e "s/^Lines executed:/$1,/" | sed -e 's/% of [0-9]*$//' >> $2
     cd ../..
 }
