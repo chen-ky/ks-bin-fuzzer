@@ -362,23 +362,8 @@ types:
           `language_tag`. Line breaks are not allowed.
         -fz-size-min: 1
         -fz-size-max: 80
-      - id: text
-        type: 
-          switch-on: compression_flag
-          cases:
-            0: iTXt
-            1: compressed_itxt
-        # encoding: UTF-8
-        # -fz-size-min: 0
-        # -fz-size-max: 2048
-        size-eos: true
-        doc: |
-          Text contents ("value" of this key-value pair), written in
-          language specified in `language_tag`. Line breaks are
-          allowed.
-  itxt:
-    seq:
-      - id: text
+      - id: uncompressed_text
+        if: compression_flag == 0
         type: str
         encoding: UTF-8
         -fz-size-min: 0
@@ -388,20 +373,18 @@ types:
           Text contents ("value" of this key-value pair), written in
           language specified in `language_tag`. Line breaks are
           allowed.
-  compressed_itxt:
-    seq:
-      - id: text
+      - id: zlib_compressed_text
+        if: compression_flag == 1 and compression_method == compression_methods::zlib
         # type: str
         # encoding: UTF-8
+        process: zlib
         -fz-size-min: 0
         -fz-size-max: 2048
         size-eos: true
-        process: zlib
         doc: |
           Text contents ("value" of this key-value pair), written in
           language specified in `language_tag`. Line breaks are
           allowed.
-
   rgb:
     seq:
       - id: r
