@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-random-order: ["bKGD", "sRGB", "cHRM", "gAMA", "pHYs", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-random-order: ["bKGD", "PLTE", "sRGB", "cHRM", "gAMA", "pHYs", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -74,7 +74,7 @@ types:
           cases:
             # Critical chunks
             '"IHDR"': ihdr_chunk
-            # '"PLTE"': plte_chunk
+            '"PLTE"': plte_chunk
             '"IDAT"': idat_chunk
             '"IEND"': iend_chunk
 
@@ -119,7 +119,7 @@ types:
       - id: color_type
         type: u1
         enum: color_type
-        -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
+        # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
         # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor]
         # -fz-choice: [color_type::greyscale_alpha, color_type::greyscale]
       - id: compression_method
@@ -138,7 +138,9 @@ types:
     seq:
       - id: entries
         type: rgb
-        # repeat: eos
+        repeat: eos
+        -fz-repeat-min: 1
+        -fz-repeat-max: 256
   idat_chunk:
     seq:
       - id: data
@@ -154,11 +156,19 @@ types:
               cases:
                 color_type::truecolor: truecolor_scanline
                 color_type::truecolor_alpha: truecolor_alpha_scanline
+                color_type::indexed: indexed_scanline
                 color_type::greyscale: greyscale_scanline
                 color_type::greyscale_alpha: greyscale_alpha_scanline
             repeat: expr
             repeat-expr: _root.ihdr.height
         types:
+          indexed_scanline:
+            seq:
+            - id: filter
+              type: u1
+              enum: scanline_filter
+            - id: data
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8)
           truecolor_scanline:
             seq:
             - id: filter

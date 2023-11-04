@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-order: ["bKGD", "sRGB", "cHRM", "gAMA", "pHYs", "tIME", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-order: ["bKGD", "PLTE", "sRGB", "cHRM", "gAMA", "pHYs", "tIME", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -74,7 +74,7 @@ types:
           cases:
             # Critical chunks
             '"IHDR"': ihdr_chunk
-            # '"PLTE"': plte_chunk
+            '"PLTE"': plte_chunk
             '"IDAT"': idat_chunk
             '"IEND"': iend_chunk
 
@@ -115,13 +115,15 @@ types:
       - id: bit_depth
         type: u1
         # -fz-choice: [1, 2, 4, 8, 16]  # For greyscale, does not support bit generation yet, so minimum is 8
-        -fz-choice: [8, 16]  # For truecolor and truecolor_alpha, greyscale_alpha
+        # -fz-choice: [8, 16]  # For truecolor and truecolor_alpha, greyscale_alpha
+        -fz-choice: [8]  # For indexed
       - id: color_type
         type: u1
         enum: color_type
-        -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
+        # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor, color_type::greyscale_alpha, color_type::greyscale]
         # -fz-choice: [color_type::truecolor_alpha, color_type::truecolor]
         # -fz-choice: [color_type::greyscale_alpha, color_type::greyscale]
+        # -fz-choice: [color_type::indexed]
       - id: compression_method
         type: u1
         valid: 0
@@ -133,15 +135,14 @@ types:
       - id: interlace_method
         type: u1
         -fz-choice: [0]  # https://www.w3.org/TR/png/#8InterlaceMethods
-#     instances:
-#       channel:
-#         value: "color_type == color_type::truecolor_alpha ? 4 : color_type == color_type::truecolor ? 3 : color_type == color_type::greyscale_alpha ? 2 : color_type == color_type::greyscale ? 1 : 0"
   plte_chunk:
     doc-ref: https://www.w3.org/TR/png/#11PLTE
     seq:
       - id: entries
         type: rgb
-        # repeat: eos
+        repeat: eos
+        -fz-repeat-min: 1
+        -fz-repeat-max: 256
   idat_chunk:
     seq:
       - id: data
@@ -157,11 +158,19 @@ types:
               cases:
                 color_type::truecolor: truecolor_scanline
                 color_type::truecolor_alpha: truecolor_alpha_scanline
+                color_type::indexed: indexed_scanline
                 color_type::greyscale: greyscale_scanline
                 color_type::greyscale_alpha: greyscale_alpha_scanline
             repeat: expr
             repeat-expr: _root.ihdr.height
         types:
+          indexed_scanline:
+            seq:
+            - id: filter
+              type: u1
+              enum: scanline_filter
+            - id: data
+              size: _root.ihdr.width * (_root.ihdr.bit_depth / 8)
           truecolor_scanline:
             seq:
             - id: filter
