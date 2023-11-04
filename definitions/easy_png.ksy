@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-order: ["bKGD", "tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-order: ["bKGD", "sRGB", "pHYs", "tIME", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -83,14 +83,14 @@ types:
 #             # '"gAMA"': gama_chunk
 #             # # iCCP
 #             # # sBIT
-#             # '"sRGB"': srgb_chunk
+            '"sRGB"': srgb_chunk
             '"bKGD"': bkgd_chunk
 #             # # hIST
 #             # # tRNS
-#             # '"pHYs"': phys_chunk
+            '"pHYs"': phys_chunk
 #             # # sPLT
-#             # '"tIME"': time_chunk
-#             # '"iTXt"': international_text_chunk
+            '"tIME"': time_chunk
+            '"iTXt"': international_text_chunk
             '"tEXt"': text_chunk
             '"zTXt"': compressed_text_chunk
 
@@ -246,6 +246,18 @@ types:
         -fz-size-min: 0
         -fz-size-max: 2048
         size-eos: true
+  srgb_chunk:
+    doc-ref: https://www.w3.org/TR/png/#11sRGB
+    seq:
+      - id: render_intent
+        type: u1
+        enum: intent
+    enums:
+      intent:
+        0: perceptual
+        1: relative_colorimetric
+        2: saturation
+        3: absolute_colorimetric
   bkgd_chunk:
     doc: |
       Background chunk stores default background color to display this
@@ -280,6 +292,122 @@ types:
     seq:
       - id: palette_index
         type: u1
+  phys_chunk:
+    doc: |
+      "Physical size" chunk stores data that allows to translate
+      logical pixels into physical units (meters, etc) and vice-versa.
+    doc-ref: https://www.w3.org/TR/png/#11pHYs
+    seq:
+      - id: pixels_per_unit_x
+        type: u4
+        doc: |
+          Number of pixels per physical unit (typically, 1 meter) by X
+          axis.
+      - id: pixels_per_unit_y
+        type: u4
+        doc: |
+          Number of pixels per physical unit (typically, 1 meter) by Y
+          axis.
+      - id: unit
+        type: u1
+        enum: phys_unit
+  time_chunk:
+    doc: |
+      Time chunk stores time stamp of last modification of this image,
+      up to 1 second precision in UTC timezone.
+    doc-ref: https://www.w3.org/TR/png/#11tIME
+    seq:
+      - id: year
+        type: u2
+      - id: month
+        type: u1
+      - id: day
+        type: u1
+      - id: hour
+        type: u1
+      - id: minute
+        type: u1
+      - id: second
+        type: u1
+  international_text_chunk:
+    doc: |
+      International text chunk effectively allows to store key-value string pairs in
+      PNG container. Both "key" (keyword) and "value" (text) parts are
+      given in pre-defined subset of iso8859-1 without control
+      characters.
+    doc-ref: https://www.w3.org/TR/png/#11iTXt
+    seq:
+      - id: keyword
+        type: strz
+        encoding: UTF-8
+        -fz-size-min: 1
+        -fz-size-max: 80
+        doc: Indicates purpose of the following text data.
+      - id: compression_flag
+        type: u1
+        doc: |
+          0 = text is uncompressed, 1 = text is compressed with a
+          method specified in `compression_method`.
+        -fz-choice: [0, 1]
+      - id: compression_method
+        type: u1
+        enum: compression_methods
+      - id: language_tag
+        type: strz
+        encoding: ASCII
+        doc: |
+          Human language used in `translated_keyword` and `text`
+          attributes - should be a language code conforming to ISO
+          646.IRV:1991.
+        -fz-size-min: 1
+        -fz-size-max: 127
+      - id: translated_keyword
+        type: strz
+        encoding: UTF-8
+        doc: |
+          Keyword translated into language specified in
+          `language_tag`. Line breaks are not allowed.
+        -fz-size-min: 1
+        -fz-size-max: 80
+      - id: text
+        type: 
+          switch-on: compression_flag
+          cases:
+            0: itxt
+            1: compressed_itxt
+        # encoding: UTF-8
+        # -fz-size-min: 0
+        # -fz-size-max: 2048
+        size-eos: true
+        doc: |
+          Text contents ("value" of this key-value pair), written in
+          language specified in `language_tag`. Line breaks are
+          allowed.
+  itxt:
+    seq:
+      - id: text
+        type: str
+        encoding: UTF-8
+        -fz-size-min: 0
+        -fz-size-max: 2048
+        size-eos: true
+        doc: |
+          Text contents ("value" of this key-value pair), written in
+          language specified in `language_tag`. Line breaks are
+          allowed.
+  compressed_itxt:
+    seq:
+      - id: text
+        # type: str
+        # encoding: UTF-8
+        -fz-size-min: 0
+        -fz-size-max: 2048
+        size-eos: true
+        process: zlib
+        doc: |
+          Text contents ("value" of this key-value pair), written in
+          language specified in `language_tag`. Line breaks are
+          allowed.
   rgb:
     seq:
       - id: r
@@ -306,5 +434,8 @@ enums:
     3: indexed
     4: greyscale_alpha
     6: truecolor_alpha
+  phys_unit:
+    0: unknown
+    1: meter
   compression_methods:
     0: zlib
