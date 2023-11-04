@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-random-order: ["bKGD", "sRGB", "pHYs", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-random-order: ["bKGD", "sRGB", "cHRM", "gAMA", "pHYs", "iTXt", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -79,8 +79,8 @@ types:
             '"IEND"': iend_chunk
 
 #             # Ancillary chunks
-#             # '"cHRM"': chrm_chunk
-#             # '"gAMA"': gama_chunk
+            '"cHRM"': chrm_chunk
+            '"gAMA"': gama_chunk
 #             # # iCCP
 #             # # sBIT
             '"sRGB"': srgb_chunk
@@ -194,6 +194,36 @@ types:
             2: up
             3: average
             4: paeth
+  chrm_chunk:
+    doc-ref: https://www.w3.org/TR/png/#11cHRM
+    seq:
+      - id: white_point
+        type: point
+      - id: red
+        type: point
+      - id: green
+        type: point
+      - id: blue
+        type: point
+  point:
+    seq:
+      - id: x_int
+        type: u4
+      - id: y_int
+        type: u4
+    instances:
+      x:
+        value: x_int / 100000.0
+      y:
+        value: y_int / 100000.0
+  gama_chunk:
+    doc-ref: https://www.w3.org/TR/png/#11gAMA
+    seq:
+      - id: gamma_int
+        type: u4
+    instances:
+      gamma_ratio:
+        value: 100000.0 / gamma_int
   iend_chunk:
     seq:
       - id: empty_body
