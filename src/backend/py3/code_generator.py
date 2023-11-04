@@ -151,6 +151,10 @@ class Python3CodeGenerator(Generator):
                 continue
             expression_component = cls._transpile_namespace(
                 expression_component)
+            if expression_component.startswith("_root"):
+                expression_component = expression_component.replace("_root", "self._root", 1)
+            elif expression_component.startswith("_parent"):
+                expression_component = expression_component.replace("_parent", "self._parent", 1)
             if produce_bytes:
                 expression_component = cls._transpile_local_ref_to_bytes(
                     available_ref, expression_component)
@@ -411,7 +415,7 @@ class Python3CodeGenerator(Generator):
         indenter.indent()
         for match_value, type_name in cases.items():
             indenter.append_lines([
-                f"case {match_value}:",
+                f"case {self._transpile_namespace(match_value)}:",
                 f"    {assign_to} = {self.type_code_generator.generate_code(type=type_name)}",
             ], code)
         return code
@@ -552,6 +556,17 @@ class Python3CodeGenerator(Generator):
                 case "expr":
                     loop_conditions = f'int({seq_entry["repeat-expr"]})'
                     for_loop_code = [f"for _i in range({loop_conditions}):",]
+                    for line in code_to_initialise_object:
+                        for_loop_code.append(f"    {line}")
+                    for_loop_code.extend([f"    self.{entry_name}.append(_)",])
+                    indenter.append_lines(for_loop_code, code)
+                case "eos":
+                    min_n_loop = seq_entry.get("-fz-repeat-min")
+                    min_n_loop = min_n_loop if min_n_loop is not None else 0
+                    max_n_loop = seq_entry["-fz-repeat-max"]
+                    for_loop_code = [
+                        f'repeat_n_times = {self._ks_helper_fn_call("rand_int", start=min_n_loop, end=max_n_loop)}',
+                        "for _i in range(repeat_n_times):",]
                     for line in code_to_initialise_object:
                         for_loop_code.append(f"    {line}")
                     for_loop_code.extend([f"    self.{entry_name}.append(_)",])
