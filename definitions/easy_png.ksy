@@ -66,7 +66,7 @@ types:
         size: 4
         encoding: UTF-8
         # -fz-order: ["IDAT", "IEND"]
-        -fz-order: ["tEXt", "IDAT", "zTXt", "IEND"]
+        -fz-order: ["bKGD", "tEXt", "IDAT", "zTXt", "IEND"]
       - id: body
         size: len
         type:
@@ -84,7 +84,7 @@ types:
 #             # # iCCP
 #             # # sBIT
 #             # '"sRGB"': srgb_chunk
-#             # '"bKGD"': bkgd_chunk
+            '"bKGD"': bkgd_chunk
 #             # # hIST
 #             # # tRNS
 #             # '"pHYs"': phys_chunk
@@ -246,6 +246,40 @@ types:
         -fz-size-min: 0
         -fz-size-max: 2048
         size-eos: true
+  bkgd_chunk:
+    doc: |
+      Background chunk stores default background color to display this
+      image against. Contents depend on `color_type` of the image.
+    doc-ref: https://www.w3.org/TR/png/#11bKGD
+    seq:
+      - id: bkgd
+        type:
+          switch-on: _root.ihdr.color_type
+          cases:
+            color_type::greyscale: bkgd_greyscale
+            color_type::greyscale_alpha: bkgd_greyscale
+            color_type::truecolor: bkgd_truecolor
+            color_type::truecolor_alpha: bkgd_truecolor
+            color_type::indexed: bkgd_indexed
+  bkgd_greyscale:
+    doc: Background chunk for greyscale images.
+    seq:
+      - id: value
+        type: u2
+  bkgd_truecolor:
+    doc: Background chunk for truecolor images.
+    seq:
+      - id: red
+        type: u2
+      - id: green
+        type: u2
+      - id: blue
+        type: u2
+  bkgd_indexed:
+    doc: Background chunk for images with indexed palette.
+    seq:
+      - id: palette_index
+        type: u1
   rgb:
     seq:
       - id: r
