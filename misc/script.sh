@@ -21,8 +21,10 @@ build_lib() {
 
 build_app() {
     mkdir -p "$BUILD_DIR"/app
+    # cp -P contrib/libtests/readpng.c "$BUILD_DIR"/app/.
     cp -P contrib/examples/pngtopng.c "$BUILD_DIR"/app/.
     cd "$BUILD_DIR"/app
+    # gcc_cov -lgcov --coverage -Wall -L.libs -lpng readpng.c -o readpng
     gcc_cov -lgcov --coverage -Wall -L.libs -lpng pngtopng.c -o pngtopng
     cd ../..
 }
@@ -40,8 +42,8 @@ test() {
     do
         # echo $i
         python3 output_fuzzer.py > test_file
+        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file
         LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null
-        # LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file test_converted
         if [ $? == 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
@@ -66,6 +68,7 @@ test() {
 
 run() {
     cd "$BUILD_DIR"/app
+    # LD_PRELOAD=../../.libs/libpng16.so ./readpng < ../../contrib/testpngs/rgb-alpha-16-1.8.png
     LD_PRELOAD=../../.libs/libpng16.so ./pngtopng ../../contrib/testpngs/rgb-alpha-16-1.8.png /dev/null
     cd ../..
 }
