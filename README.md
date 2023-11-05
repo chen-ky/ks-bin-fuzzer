@@ -25,7 +25,9 @@ Kaitai Struct compiler to produce format specific binary fuzzer
 | `-fz-size-min`            | Minimum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                       |
 | `-fz-size-max`            | Maximum size (inclusive) of the field that can be generated. Only works for strings or bytes.                                                                                                       |
 | `-fz-choice`              | Randomly pick an option from the list of choices available.                                                                                                                                         |
-
+`-fz-static`
+`-fz-increment`
+`-fz-increment-step`
 ### Algorithms Available
 
 `crc32`,

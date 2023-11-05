@@ -221,6 +221,9 @@ class ValueCodeGenerator():
             enum_name = kwargs.get("enum")  # Enum type can only be int
             if enum_name is not None:
                 return self.gen_enum_fn(enum_name)
+            fz_increment = kwargs.get("-fz-increment")
+            if fz_increment is not None:
+                return fz_increment
             return gen_fn(start=kwargs["-fz-range-min"], end=kwargs["-fz-range-max"])
         elif seq_type in FLOAT_TYPE:
             if kwargs.get("valid") is not None:

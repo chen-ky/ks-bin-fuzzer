@@ -16,3 +16,7 @@ BaseObject: TypeAlias = dict[str, Any]
 SeqEntry: TypeAlias = dict[str, Any]
 EnumClassEntry: TypeAlias = dict[int, str]
 VerboseEnumClassEntry: TypeAlias = dict[int, dict[str, str]]
+
+
+def is_base_type(t: str | None) -> bool:
+    return t in VALID_BASE_TYPE_VAL

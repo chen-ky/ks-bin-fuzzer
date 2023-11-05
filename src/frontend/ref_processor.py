@@ -89,10 +89,17 @@ class RefProcessor():
 
     def _construct_available_ref(self) -> None:
         self.source["_available_ref"] = []
+        self.source["_static_ref"] = []
         for seq_entry in self.source["seq"]:
+            is_static = seq_entry["-fz-static"]
             self.source["_available_ref"].append(seq_entry["id"])
+            if is_static:
+                self.source["_static_ref"].append(seq_entry["id"])
         for instance_name, instance_entry in self.source["instances"].items():
+            is_static = instance_entry["-fz-static"]
             self.source["_available_ref"].append(instance_name)
+            if is_static:
+                self.source["_static_ref"].append(instance_name)
 
     def pre_process(self):
         pass

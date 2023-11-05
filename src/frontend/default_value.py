@@ -92,12 +92,15 @@ class DefaultValuePopulator():
 
     def handle_seq_entry(self, val):
         val.setdefault("type", None)  # Generate bytes if not specified
+        val["-fz-static"] = False  # Seq entry cannot be static
         if "type" in val:
             t = val["type"]
             if t in VALID_INT_TYPE_VAL:
                 min_val, max_val = self._int_min_max(t)
                 val.setdefault("-fz-range-min", min_val)
                 val.setdefault("-fz-range-max", max_val)
+                if val.get("-fz-increment") is not None:
+                    val.setdefault("-fz-increment-step", 1)
             elif t in VALID_FLOAT_TYPE_VAL:
                 min_val, max_val = self._float_min_max(t)
                 val.setdefault("-fz-range-min", min_val)

@@ -2,7 +2,7 @@ from datastructure.intermediate_representation import IntermediateRepresentation
 from backend.generator import Generator
 from backend.utils.indenter import Indenter
 import backend.py3.utils.sanitiser as sanitiser
-from utils.types import SeqEntry, VerboseEnumClassEntry
+from utils.types import SeqEntry, VerboseEnumClassEntry, is_base_type
 from utils.const import KEY_WITH_EXPRESSION, KEY_WITH_EXPRESSION_PRODUCE_BYTES, OPERATORS
 from datastructure.dependency_graph import DependencyGraph
 from .value_code_generator import ValueCodeGenerator
@@ -76,18 +76,21 @@ class Python3CodeGenerator(Generator):
         return ".".join(cleaned_expression)
 
     @staticmethod
-    def _transpile_local_ref(available_ref: List[str], expression: str) -> str:
+    def _transpile_local_ref(class_name: str, available_ref: List[str], static_ref: List[str], expression: str) -> str:
         cleaned_expression = []
         for value in expression.split():
+            instance = "self"
+            if value in static_ref:
+                instance = class_name
             if value in available_ref:
-                cleaned_expression.append(f"self.{value}")
+                cleaned_expression.append(f"{instance}.{value}")
             else:
                 cleaned_expression.append(value)
         return " ".join(cleaned_expression)
 
     @classmethod
-    def _transpile_local_ref_to_bytes(cls, available_ref: List[str], expression: str) -> str:
-        expression = cls._transpile_local_ref(available_ref, expression)
+    def _transpile_local_ref_to_bytes(cls, class_name: str, available_ref: List[str], static_ref: List[str], expression: str) -> str:
+        expression = cls._transpile_local_ref(class_name, available_ref, expression)
         cleaned_expression = []
         for value in expression.split():
             # "_" is a special variable, representing the previously parsed/generated object
@@ -140,7 +143,7 @@ class Python3CodeGenerator(Generator):
         return f"{if_true} if {condition} else {if_false}"
 
     @classmethod
-    def _expression_transpiler(cls, available_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
+    def _expression_transpiler(cls, class_name: str, available_ref: List[str], static_ref: List[str], expression: str, produce_bytes: bool = False) -> str:
         # Do not process anything other than string (int, list etc.)
         if not isinstance(expression, str):
             return expression
@@ -151,16 +154,18 @@ class Python3CodeGenerator(Generator):
                 continue
             expression_component = cls._transpile_namespace(
                 expression_component)
-            if expression_component.startswith("_root"):
-                expression_component = expression_component.replace("_root", "self._root", 1)
-            elif expression_component.startswith("_parent"):
-                expression_component = expression_component.replace("_parent", "self._parent", 1)
+            if expression_component.startswith("_root") or expression_component.startswith("(_root"):
+                expression_component = expression_component.replace(
+                    "_root", "self._root", 1)
+            elif expression_component.startswith("_parent") or expression_component.startswith("(_parent"):
+                expression_component = expression_component.replace(
+                    "_parent", "self._parent", 1)
             if produce_bytes:
                 expression_component = cls._transpile_local_ref_to_bytes(
-                    available_ref, expression_component)
+                    class_name, available_ref, static_ref, expression_component)
             else:
                 expression_component = cls._transpile_local_ref(
-                    available_ref, expression_component)
+                    class_name, available_ref, static_ref, expression_component)
             result.append(expression_component)
         # expression = cls._transpile_ternary(expression)
         return " ".join(result)
@@ -194,10 +199,11 @@ class Python3CodeGenerator(Generator):
         seq_val = self.ir.source["seq"]
         instances_val = self.ir.source["instances"]
         available_ref = self.ir.source["_available_ref"]
+        static_ref = self.ir.source["_static_ref"]
         dependency_graph = self.ir.source["_dependency_graph"]
         self.output.writelines(
             self.generate_class(meta_val, seq_val, instances_val, doc_val,
-                                available_ref, dependency_graph)
+                                available_ref, static_ref, dependency_graph)
         )
 
     def write_enums(self) -> None:
@@ -235,7 +241,7 @@ class Python3CodeGenerator(Generator):
         indenter.append_line("\n", code)
         return code
 
-    def generate_class_static_var(self, seq: List[SeqEntry], instances: dict[dict[str, Any]], available_ref: List[str]) -> List[str]:
+    def generate_class_static_var(self, seq: List[SeqEntry], class_name: str, instances: dict[dict[str, Any]], available_ref: List[str], static_ref: List[str]) -> List[str]:
         """Handle static variable for a type, such as those using `-fz-order`"""
         indenter = Indenter(add_newline=True)
         code = []
@@ -254,12 +260,12 @@ class Python3CodeGenerator(Generator):
         for instance_name, instance_entry in instances.items():
             if instance_entry["-fz-static"]:
                 val = self._expression_transpiler(
-                    available_ref, instance_entry["value"])
+                    class_name, available_ref, static_ref, instance_entry["value"])
                 indenter.append_line(f"{instance_name} = {val}", code)
         code.append("")
         return code
 
-    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], instances: dict[str, dict[str, Any]], available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
+    def generate_class_init_method(self, class_name: str, seq: List[SeqEntry], instances: dict[str, dict[str, Any]], available_ref: List[str], static_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         indenter = Indenter(add_newline=True)
         code = []
         indenter.append_lines([
@@ -291,10 +297,10 @@ class Python3CodeGenerator(Generator):
         # for seq_entry in seq:
             if seq_entry is not None:
                 indenter.append_lines(self.generate_seq_entry(
-                    class_name, seq_entry, available_ref), code)
+                    class_name, seq_entry, available_ref, static_ref), code)
             if instance_entry is not None and not instance_entry["-fz-static"]:
                 indenter.append_lines(self.generate_instance_entry(
-                    class_name, instance_name, instance_entry, available_ref), code)
+                    class_name, instance_name, instance_entry, static_ref, available_ref), code)
         indenter.append_line("", code)
         return code
 
@@ -420,7 +426,7 @@ class Python3CodeGenerator(Generator):
             ], code)
         return code
 
-    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], instances: dict[str, dict[str, Any]], doc: str, available_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
+    def generate_class(self, meta: dict[str, Any], seq: List[SeqEntry], instances: dict[str, dict[str, Any]], doc: str, available_ref: List[str], static_ref: List[str], dependency_graph: DependencyGraph) -> List[str]:
         class_name = sanitiser.sanitise_class_name(meta["id"])
         self.logger.debug(f"Generating class \"{class_name}\"")
         indenter = Indenter(add_newline=True)
@@ -431,9 +437,9 @@ class Python3CodeGenerator(Generator):
         if len(doc) > 0:
             indenter.append_lines(self.generate_doc(doc), code)
         indenter.append_lines(self.generate_class_static_var(
-            seq, instances, available_ref), code)
+            seq, class_name, instances, available_ref, static_ref), code)
         indenter.append_lines(
-            self.generate_class_init_method(class_name, seq, instances, available_ref, dependency_graph), code)
+            self.generate_class_init_method(class_name, seq, instances, available_ref, static_ref, dependency_graph), code)
         indenter.append_lines(self.generate_seq_to_bytes_method(seq), code)
 
         indenter.append_lines([
@@ -474,7 +480,7 @@ class Python3CodeGenerator(Generator):
         self.logger.debug(f"Done generating class \"{class_name}\"")
         return code
 
-    def generate_seq_entry(self, class_name: str, seq_entry: SeqEntry, available_ref: List[str]) -> List[str]:
+    def generate_seq_entry(self, class_name: str, seq_entry: SeqEntry, available_ref: List[str], static_ref: List[str]) -> List[str]:
         entry_name = f"{seq_entry['id']}"  # FIXME sanitise name?
         self.logger.debug(f"Generating seq entry \"{entry_name}\"")
         indenter = Indenter(add_newline=True)
@@ -486,11 +492,11 @@ class Python3CodeGenerator(Generator):
             for regex_key in KEY_WITH_EXPRESSION:
                 if re.fullmatch(regex_key, key) is not None:
                     seq_entry[key] = self._expression_transpiler(
-                        available_ref, seq_entry[key])
+                        class_name, available_ref, static_ref, seq_entry[key])
             for regex_key in KEY_WITH_EXPRESSION_PRODUCE_BYTES:
                 if re.fullmatch(regex_key, key) is not None:
                     seq_entry[key] = self._expression_transpiler(
-                        available_ref, seq_entry[key], produce_bytes=True)
+                        class_name, available_ref, static_ref, seq_entry[key], produce_bytes=True)
             if re.fullmatch(r"\-fz\-process\-.+", key):
                 fz_process_key = key
         # Process expression in a `type` block
@@ -500,12 +506,12 @@ class Python3CodeGenerator(Generator):
                 for regex_key in KEY_WITH_EXPRESSION:
                     if re.fullmatch(regex_key, key) is not None:
                         type_block[key] = self._expression_transpiler(
-                            available_ref, type_block[key])
+                            class_name, available_ref, static_ref, type_block[key])
             if "switch-on" in type_block:
                 new_cases = dict()
                 for k, v in type_block["cases"].items():
                     new_cases[self._expression_transpiler(
-                        available_ref, k)] = v
+                        class_name, available_ref, static_ref, k)] = v
                 type_block["cases"] = new_cases
 
         if "if" in seq_entry:
@@ -533,10 +539,15 @@ class Python3CodeGenerator(Generator):
                 code_to_initialise_object.extend(
                     self.generate_switch_type("_", match_on, cases))
             else:
-                seq_class_name = sanitiser.sanitise_class_name(
-                    seq_entry["type"])
-                code_to_initialise_object = [
-                    f"_ = {seq_class_name}(_parent=self, _root=self._root)"]
+                if is_base_type(seq_entry["type"]):
+                    code_to_initialise_object = [
+                        f"_ = {self.type_code_generator.generate_code(**seq_entry)}"
+                    ]
+                else:
+                    seq_class_name = sanitiser.sanitise_class_name(
+                        seq_entry["type"])
+                    code_to_initialise_object = [
+                        f"_ = {seq_class_name}(_parent=self, _root=self._root)"]
             repeat_type = seq_entry["repeat"]
             match repeat_type:
                 case "until":
@@ -614,6 +625,10 @@ class Python3CodeGenerator(Generator):
                 f"self.{entry_name} = {self.type_code_generator.generate_code(**seq_entry)}",
                 code
             )
+            fz_increment_step = seq_entry.get("-fz-increment-step")
+            if fz_increment_step is not None:
+                indenter.append_line(
+                    f'{seq_entry["-fz-increment"]} += ({seq_entry["-fz-increment-step"]})', code)
         if "if" in seq_entry:
             indenter.unindent()
             indenter.append_lines([
@@ -623,13 +638,13 @@ class Python3CodeGenerator(Generator):
             indenter.indent()
         return code
 
-    def generate_instance_entry(self, class_name: str, instance_name: str, instance_entry: dict[str, Any], available_ref: List[str]) -> List[str]:
+    def generate_instance_entry(self, class_name: str, instance_name: str, instance_entry: dict[str, Any], available_ref: List[str], static_ref: List[str]) -> List[str]:
         self.logger.debug(f"Generating instance entry \"{instance_name}\"")
         indenter = Indenter(add_newline=True)
         code = []
 
         val = self._expression_transpiler(
-            available_ref, instance_entry["value"])
+            class_name, available_ref, static_ref, instance_entry["value"])
         indenter.append_line(f"self.{instance_name} = {val}", code)
         return code
 
