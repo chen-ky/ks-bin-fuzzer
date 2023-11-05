@@ -633,7 +633,7 @@ class Python3CodeGenerator(Generator):
             indenter.unindent()
             indenter.append_lines([
                 "else:",
-                f"    self.{entry_name} = None"
+                f"    self.{entry_name} = b''"
             ], code)
             indenter.indent()
         return code
