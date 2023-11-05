@@ -33,6 +33,27 @@ class Python3CodeGenerator(Generator):
         "-fz-process-sha3-512": "sha3_512",
     }
 
+    NUM_TYPE_STRUCT_PACK_FORMAT_MAP = {
+        "u1": "B",
+        "u2le": "<H",
+        "u2be": ">H",
+        "u4le": "<I",
+        "u4be": ">I",
+        "u8le": "<Q",
+        "u8be": ">Q",
+        "s1": "b",
+        "s2le": "<h",
+        "s2be": ">h",
+        "s4le": "<i",
+        "s4be": ">i",
+        "s8le": "<q",
+        "s8be": ">q",
+        "f4le": "<f",
+        "f4be": ">f",
+        "f8le": "<d",
+        "f8be": ">d",
+    }
+
     def __init__(self, ir: IntermediateRepresentation, output: StringIO, is_entry_point: bool = False) -> None:
         self.ir = ir
         self.output = output
@@ -90,7 +111,8 @@ class Python3CodeGenerator(Generator):
 
     @classmethod
     def _transpile_local_ref_to_bytes(cls, class_name: str, available_ref: List[str], static_ref: List[str], expression: str) -> str:
-        expression = cls._transpile_local_ref(class_name, available_ref, static_ref, expression)
+        expression = cls._transpile_local_ref(
+            class_name, available_ref, static_ref, expression)
         cleaned_expression = []
         for value in expression.split():
             # "_" is a special variable, representing the previously parsed/generated object
@@ -316,88 +338,46 @@ class Python3CodeGenerator(Generator):
             indenter.indent()
             self_entry_name = f"self.{seq_entry['id']}"
             process_fn_prepend, process_fn_append = ("", "")
-            if enum_name is not None:
-                self_entry_name = f"{self_entry_name}.value"
             if process_key is not None:
                 process_fn_prepend = f"{process_key}_("
                 process_fn_append = ")"
             entry_type = seq_entry['type']
-            match entry_type:
-                case "u1":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('B', {self_entry_name}){process_fn_append}", code)
-                case "u2le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<H', {self_entry_name}){process_fn_append}", code)
-                case "u2be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>H', {self_entry_name}){process_fn_append}", code)
-                case "u4le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<I', {self_entry_name}){process_fn_append}", code)
-                case "u4be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>I', {self_entry_name}){process_fn_append}", code)
-                case "u8le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<Q', {self_entry_name}){process_fn_append}", code)
-                case "u8be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>Q', {self_entry_name}){process_fn_append}", code)
-                case "s1":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('b', {self_entry_name}){process_fn_append}", code)
-                case "s2le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<h', {self_entry_name}){process_fn_append}", code)
-                case "s2be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>h', {self_entry_name}){process_fn_append}", code)
-                case "s4le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<i', {self_entry_name}){process_fn_append}", code)
-                case "s4be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>i', {self_entry_name}){process_fn_append}", code)
-                case "s8le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<q', {self_entry_name}){process_fn_append}", code)
-                case "s8be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>q', {self_entry_name}){process_fn_append}", code)
-                case "f4le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<f', {self_entry_name}){process_fn_append}", code)
-                case "f4be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>f', {self_entry_name}){process_fn_append}", code)
-                case "f8le":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('<d', {self_entry_name}){process_fn_append}", code)
-                case "f8be":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}struct.pack('>d', {self_entry_name}){process_fn_append}", code)
-                case "str" | "strz":
-                    indenter.append_line(
-                        f"return {process_fn_prepend}{self_entry_name}.encode(encoding=\"{seq_entry['encoding'].lower()}\"){process_fn_append}", code
-                    )
-                case None:
-                    indenter.append_line(
-                        f"return {process_fn_prepend}{self_entry_name}{process_fn_append}", code
-                    )
-                case _:
-                    # Custom type
-                    if "repeat" in seq_entry:
-                        indenter.append_lines([
-                            "result = b''",
-                            f"for entry_instance in {self_entry_name}:",
-                            "    result += entry_instance.result()",
-                            f"return {process_fn_prepend}result{process_fn_append}",
-                        ], code)
-                    else:
-                        indenter.append_line(
-                            f"return {process_fn_prepend}{self_entry_name}.result(){process_fn_append}", code
-                        )
+            # Handle `if` key
+            indenter.append_lines([
+                f"if {self_entry_name} is None:",
+                "    return b''"], code
+            )
+
+            item = self_entry_name
+            if "repeat" in seq_entry:
+                item = "entry_instance"
+            if enum_name is not None:
+                item = f"{item}.value"
+
+            get_byte_method = ""
+            if isinstance(entry_type, dict):  # `type` is a `switch-on` and `cases` key
+                # Custom type
+                get_byte_method = f"{item}.result()"
+            elif entry_type in self.NUM_TYPE_STRUCT_PACK_FORMAT_MAP:
+                get_byte_method = f"struct.pack(\"{self.NUM_TYPE_STRUCT_PACK_FORMAT_MAP[entry_type]}\", {item})"
+            elif entry_type == "str" or entry_type == "strz":
+                get_byte_method = f"{item}.encode(encoding=\"{seq_entry['encoding'].lower()}\")"
+            elif entry_type is None:
+                get_byte_method = f"{item}"
+            else:
+                # Custom type
+                get_byte_method = f"{item}.result()"
+
+            # Handle `repeat` key
+            if "repeat" in seq_entry:
+                indenter.append_lines([
+                    "result = b''",
+                    f"for entry_instance in {self_entry_name}:",
+                    f"    result += {get_byte_method}",
+                    f"return {process_fn_prepend}result{process_fn_append}",
+                ], code)
+            else:
+                indenter.append_line(f"return {process_fn_prepend}{get_byte_method}{process_fn_append}", code)
             indenter.append_line("", code)
             indenter.unindent()
         return code
@@ -633,7 +613,7 @@ class Python3CodeGenerator(Generator):
             indenter.unindent()
             indenter.append_lines([
                 "else:",
-                f"    self.{entry_name} = b''"
+                f"    self.{entry_name} = None"
             ], code)
             indenter.indent()
         return code
