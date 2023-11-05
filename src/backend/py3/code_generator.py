@@ -90,7 +90,7 @@ class Python3CodeGenerator(Generator):
 
     @classmethod
     def _transpile_local_ref_to_bytes(cls, class_name: str, available_ref: List[str], static_ref: List[str], expression: str) -> str:
-        expression = cls._transpile_local_ref(class_name, available_ref, expression)
+        expression = cls._transpile_local_ref(class_name, available_ref, static_ref, expression)
         cleaned_expression = []
         for value in expression.split():
             # "_" is a special variable, representing the previously parsed/generated object
@@ -300,7 +300,7 @@ class Python3CodeGenerator(Generator):
                     class_name, seq_entry, available_ref, static_ref), code)
             if instance_entry is not None and not instance_entry["-fz-static"]:
                 indenter.append_lines(self.generate_instance_entry(
-                    class_name, instance_name, instance_entry, static_ref, available_ref), code)
+                    class_name, instance_name, instance_entry, available_ref, static_ref), code)
         indenter.append_line("", code)
         return code
 
