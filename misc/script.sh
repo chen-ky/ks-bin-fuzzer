@@ -43,7 +43,8 @@ test() {
     rm -rf "$REPORT_DIR"
     mkdir -p "$REPORT_DIR"
     cp output_fuzzer.py "$REPORT_DIR/"
-    git status > "$GIT_STATUS"
+    git log -1 > "$GIT_STATUS"
+    git status >> "$GIT_STATUS"
     echo 'runs,coverage_percent' > "$COVERAGE_REPORT"
     SUCCESS=0
     FAILED=0
