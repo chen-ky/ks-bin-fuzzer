@@ -27,11 +27,11 @@ build_lib() {
 
 build_app() {
     mkdir -p "$BUILD_DIR"/app
-    # cp -P contrib/libtests/readpng.c "$BUILD_DIR"/app/.
-    cp -P contrib/examples/pngtopng.c "$BUILD_DIR"/app/.
+    cp -P contrib/libtests/readpng.c "$BUILD_DIR"/app/.
+    # cp -P contrib/examples/pngtopng.c "$BUILD_DIR"/app/.
     cd "$BUILD_DIR"/app
-    # gcc_cov -lgcov --coverage -Wall readpng.c -o readpng -I. -L.libs -lpng
-    gcc_cov -lgcov --coverage -Wall pngtopng.c -o pngtopng -I. -L.libs -lpng
+    gcc_cov -lgcov --coverage -Wall readpng.c -o readpng -I. -L.libs -lpng
+    # gcc_cov -lgcov --coverage -Wall pngtopng.c -o pngtopng -I. -L.libs -lpng
     cd ../..
 }
 
@@ -56,8 +56,8 @@ test() {
     do
         # echo $i
         python3 output_fuzzer.py > test_file
-        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
-        LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
+        LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
+        # LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
         if [ $? -eq 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
@@ -82,8 +82,8 @@ test() {
 
 run() {
     cd "$BUILD_DIR"/app
-    # LD_PRELOAD=../../.libs/libpng16.so ./readpng < ../../contrib/testpngs/rgb-alpha-16-1.8.png
-    LD_PRELOAD=../../.libs/libpng16.so ./pngtopng ../../contrib/testpngs/rgb-alpha-16-1.8.png /dev/null
+    LD_PRELOAD=../../.libs/libpng16.so ./readpng < ../../contrib/testpngs/rgb-alpha-16-1.8.png
+    # LD_PRELOAD=../../.libs/libpng16.so ./pngtopng ../../contrib/testpngs/rgb-alpha-16-1.8.png /dev/null
     cd ../..
 }
 
