@@ -35,6 +35,7 @@ test() {
     cp ../../build/output_fuzzer.py  "$BUILD_DIR"/app/.
     set +e
     cd "$BUILD_DIR"/app
+    rm -f test_target_out.txt
     echo 'runs,coverage_percent' > $COVERAGE_REPORT
     SUCCESS=0
     FAILED=0
@@ -43,8 +44,8 @@ test() {
     do
         # echo $i
         python3 output_fuzzer.py > test_file
-        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file
-        LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null
+        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> test_target_out.txt
+        LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> test_target_out.txt
         if [ $? == 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
