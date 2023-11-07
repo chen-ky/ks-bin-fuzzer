@@ -2,6 +2,7 @@
 
 BUILD_DIR='build'
 EXCLUDE_FILES="pnglibconf.* pngtest.* example.*"
+TEMP_FILE='/tmp/tempfile'
 REPORT_DIR='report'
 COVERAGE_REPORT="$REPORT_DIR/coverage.csv"
 TEST_TARGET_OUTPUT="$REPORT_DIR/test_target_out.txt"
@@ -56,8 +57,8 @@ test() {
     do
         # echo $i
         python3 output_fuzzer.py > test_file
-        LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
-        # LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
+        LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file > "$TEMP_FILE" 2>&1
+        # LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null /tmp/tempfile 
         if [ $? -eq 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
@@ -65,10 +66,11 @@ test() {
             FAILED=$(expr $FAILED + 1)
         fi
         RAN=$(expr $RAN + 1)
+        cat "$TEMP_FILE" | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
         cd ../.. && \
         prepare_cov $RAN $COVERAGE_REPORT && \
         cd "$BUILD_DIR"/app
-        rm test_file
+        rm test_file "$TEMP_FILE"
     done
     rm output_fuzzer.py
     cd "../.."
