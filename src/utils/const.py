@@ -24,5 +24,5 @@ OPERATORS = tuple(set().union(ARITHMETIC_OPERATORS, STRING_OPERATORS,
 VALID_PROCESS_KEY_VALUE = ["zlib"]
 
 KEY_WITH_EXPRESSION = ["size", "switch-on", "repeat-expr", "repeat-until",
-                       "valid", "value", "if", "-fz-increment", "-fz-increment-step"]
+                       "valid", "value", "if", "-fz-increment", "-fz-increment-step", "-fz-range-min", "-fz-range-max"]
 KEY_WITH_EXPRESSION_PRODUCE_BYTES = [r"\-fz\-process\-.+", "-fz-attr-len"]
