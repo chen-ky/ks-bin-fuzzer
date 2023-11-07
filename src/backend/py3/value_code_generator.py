@@ -50,14 +50,14 @@ class ValueCodeGenerator():
         return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
     def gen_u1_fn(self, start: int = const.u1_MIN, end: int = const.u1_MAX) -> str:
-        if start < const.u1_MIN or end > const.u1_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.u1_MIN or end > const.u1_MAX):
             raise ValueError("Provided value is out of u1 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
         return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
     def gen_u2_fn(self, start: int = const.u2_MIN, end: int = const.u2_MAX) -> str:
-        if start < const.u2_MIN or end > const.u2_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.u2_MIN or end > const.u2_MAX):
             raise ValueError("Provided value is out of u2 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -70,7 +70,7 @@ class ValueCodeGenerator():
         return self.gen_u2_fn(start=start, end=end)
 
     def gen_u4_fn(self, start: int = const.u4_MIN, end: int = const.u4_MAX) -> str:
-        if start < const.u4_MIN or end > const.u4_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.u4_MIN or end > const.u4_MAX):
             raise ValueError("Provided value is out of u4 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -83,7 +83,7 @@ class ValueCodeGenerator():
         return self.gen_u4_fn(start=start, end=end)
 
     def gen_u8_fn(self, start: int = const.u8_MIN, end: int = const.u8_MAX) -> str:
-        if start < const.u8_MIN or end > const.u8_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.u8_MIN or end > const.u8_MAX):
             raise ValueError("Provided value is out of u8 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -96,14 +96,14 @@ class ValueCodeGenerator():
         return self.gen_u8_fn(start=start, end=end)
 
     def gen_s1_fn(self, start: int = const.s1_MIN, end: int = const.s1_MAX) -> str:
-        if start < const.s1_MIN or end > const.s1_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.s1_MIN or end > const.s1_MAX):
             raise ValueError("Provided value is out of s1 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
         return f"{self.ks_helper_instance_name}.{fn_name}{fn_args}"
 
     def gen_s2_fn(self, start: int = const.s2_MIN, end: int = const.s2_MAX) -> str:
-        if start < const.s2_MIN or end > const.s2_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.s2_MIN or end > const.s2_MAX):
             raise ValueError("Provided value is out of s2 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -116,7 +116,7 @@ class ValueCodeGenerator():
         return self.gen_s2_fn(start=start, end=end)
 
     def gen_s4_fn(self, start: int = const.s4_MIN, end: int = const.s4_MAX) -> str:
-        if start < const.s4_MIN or end > const.s4_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.s4_MIN or end > const.s4_MAX):
             raise ValueError("Provided value is out of s4 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -129,7 +129,7 @@ class ValueCodeGenerator():
         return self.gen_s4_fn(start=start, end=end)
 
     def gen_s8_fn(self, start: int = const.s8_MIN, end: int = const.s8_MAX) -> str:
-        if start < const.s8_MIN or end > const.s8_MAX:
+        if isinstance(start, int) and isinstance(end, int) and (start < const.s8_MIN or end > const.s8_MAX):
             raise ValueError("Provided value is out of s8 range")
         fn_name = "rand_int"
         fn_args = f"({start}, {end})"
@@ -143,7 +143,7 @@ class ValueCodeGenerator():
 
     def gen_f4_fn(self, start: float = const.f4_MIN, end: float = const.f4_MAX) -> str:
         # TODO Does not actually support range generation
-        if start < const.f4_MIN or end > const.f4_MAX:
+        if isinstance(start, float) and isinstance(end, float) and (start < const.f4_MIN or end > const.f4_MAX):
             raise ValueError("Provided value is out of f4 range")
         fn_name = "rand_float"
         fn_args = "()"
@@ -157,7 +157,7 @@ class ValueCodeGenerator():
 
     def gen_f8_fn(self, start: float = const.f8_MIN, end: float = const.f8_MAX) -> str:
         # TODO Does not actually support range generation
-        if start < const.f8_MIN or end > const.f8_MAX:
+        if isinstance(start, float) and isinstance(end, float) and (start < const.f8_MIN or end > const.f8_MAX):
             raise ValueError("Provided value is out of f8 range")
         fn_name = "rand_double"
         fn_args = "()"
