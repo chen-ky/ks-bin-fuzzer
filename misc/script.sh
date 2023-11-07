@@ -2,7 +2,11 @@
 
 BUILD_DIR='build'
 EXCLUDE_FILES="pnglibconf.* pngtest.* example.*"
-COVERAGE_REPORT='coverage.csv'
+REPORT_DIR='report'
+COVERAGE_REPORT="$REPORT_DIR/coverage.csv"
+TEST_TARGET_OUTPUT="$REPORT_DIR/test_target_out.txt"
+LAST_GCOV_OUTPUT="$REPORT_DIR/gcov_out.txt"
+GIT_STATUS="$REPORT_DIR/git.txt"
 TEST_COUNT=10000
 TEST_SECONDS=$(expr '24' '*' '60' '*' '60')
 
@@ -36,8 +40,11 @@ test() {
     cp ../../build/output_fuzzer.py  "$BUILD_DIR"/app/.
     set +e
     cd "$BUILD_DIR"/app
-    rm -f test_target_out.txt
-    echo 'runs,coverage_percent' > $COVERAGE_REPORT
+    rm -rf "$REPORT_DIR"
+    mkdir -p "$REPORT_DIR"
+    cp output_fuzzer.py "$REPORT_DIR/"
+    git status > "$GIT_STATUS"
+    echo 'runs,coverage_percent' > "$COVERAGE_REPORT"
     SUCCESS=0
     FAILED=0
     RAN=0
@@ -48,8 +55,8 @@ test() {
     do
         # echo $i
         python3 output_fuzzer.py > test_file
-        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> test_target_out.txt
-        LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> test_target_out.txt
+        # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
+        LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
         if [ $? == 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
@@ -86,7 +93,7 @@ prepare_cov() {
     cp -P .libs/*.gcno "$BUILD_DIR"/app/
     cd "$BUILD_DIR"/app
     rm -r $EXCLUDE_FILES
-    gcov *.c | tee gcov_out.txt | tail -n1 | tee /dev/tty | sed -e "s/^Lines executed:/$1,/" | sed -e 's/% of [0-9]*$//' >> $2
+    gcov *.c | tee "$LAST_GCOV_OUTPUT" | tail -n1 | tee /dev/tty | sed -e "s/^Lines executed:/$1,/" | sed -e 's/% of [0-9]*$//' >> $2
     cd ../..
 }
 
@@ -123,5 +130,5 @@ then
     test
 else
     run
-    prepare_cov
+    # prepare_cov
 fi
