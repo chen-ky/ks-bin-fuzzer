@@ -124,44 +124,60 @@ class Python3CodeGenerator(Generator):
 
     @staticmethod
     def _transpile_ternary(expression: str) -> str:
+        # FIXME This is very hacky
         last_quote_type = None
         ternary_question_mark_pos = None
         ternary_colon_pos = None
-        for i, c in enumerate(expression):
-            if last_quote_type is None and (c == "\"" or c == "'"):
-                if i > 0 and expression[i - 1] == "\\":
-                    # Escaped quote
+        regex_result = re.search(r"\(.*\?.*:.*\)", expression)
+        condition = ""
+        if_true = ""
+        if_false = ""
+        if regex_result is not None:
+            ternary = regex_result.group(0).strip().strip("()")
+            condition, if_results = ternary.split("?", 1)
+            condition = condition.strip()
+            if_true, if_false = if_results.split(":", 1)
+            condition = condition.strip()
+            if_true = if_true.strip()
+            if_false = if_false.strip()
+            res = expression.replace(regex_result.group(0), f"( {if_true} if {condition} else {if_false} )")
+            return res
+        else:
+            for i, c in enumerate(expression):
+                if last_quote_type is None and (c == "\"" or c == "'"):
+                    if i > 0 and expression[i - 1] == "\\":
+                        # Escaped quote
+                        continue
+                    else:
+                        # Opening quote
+                        last_quote_type = c
+                        continue
+                elif last_quote_type == c:
+                    # Closing quote
+                    last_quote_type = None
                     continue
-                else:
-                    # Opening quote
-                    last_quote_type = c
-                    continue
-            elif last_quote_type == c:
-                # Closing quote
-                last_quote_type = None
-                continue
-            if last_quote_type is None and c == "?":
-                if ternary_question_mark_pos is None:
-                    ternary_question_mark_pos = i
-                else:
-                    raise ValueError("Stray `?` in ternary?")
-            elif last_quote_type is None and ternary_question_mark_pos is not None and c == ":":
-                if ternary_colon_pos is None:
-                    ternary_colon_pos = i
-                else:
-                    raise ValueError("Stray `:` in ternary?")
+                if last_quote_type is None and c == "?":
+                    if ternary_question_mark_pos is None:
+                        ternary_question_mark_pos = i
+                    else:
+                        raise ValueError("Stray `?` in ternary?")
+                elif last_quote_type is None and ternary_question_mark_pos is not None and c == ":":
+                    if ternary_colon_pos is None:
+                        ternary_colon_pos = i
+                    else:
+                        raise ValueError("Stray `:` in ternary?")
 
-        if last_quote_type is not None:
-            raise ValueError("Unmatched quote in ternary")
-        elif ternary_question_mark_pos is None:
-            # Not a ternary
-            return expression
-        elif ternary_colon_pos is None:
-            raise ValueError("Invalid ternary syntax")
+            if last_quote_type is not None:
+                raise ValueError("Unmatched quote in ternary")
+            elif ternary_question_mark_pos is None:
+                # Not a ternary
+                return expression
+            elif ternary_colon_pos is None:
+                raise ValueError("Invalid ternary syntax")
 
-        condition = expression[:ternary_question_mark_pos]
-        if_true = expression[ternary_question_mark_pos + 1: ternary_colon_pos]
-        if_false = expression[ternary_colon_pos + 1:]
+            condition = expression[:ternary_question_mark_pos]
+            if_true = expression[ternary_question_mark_pos + 1: ternary_colon_pos]
+            if_false = expression[ternary_colon_pos + 1:]
         return f"{if_true} if {condition} else {if_false}"
 
     @classmethod
@@ -169,6 +185,7 @@ class Python3CodeGenerator(Generator):
         # Do not process anything other than string (int, list etc.)
         if not isinstance(expression, str):
             return expression
+        expression = cls._transpile_ternary(expression)
         result = []
         for expression_component in expression.split(" "):
             if expression_component in OPERATORS:
@@ -189,8 +206,8 @@ class Python3CodeGenerator(Generator):
                 expression_component = cls._transpile_local_ref(
                     class_name, available_ref, static_ref, expression_component)
             result.append(expression_component)
-        # expression = cls._transpile_ternary(expression)
-        return " ".join(result)
+        result = " ".join(result)
+        return result
 
     # def _process_expression_in_seq(self):
     #     pass
