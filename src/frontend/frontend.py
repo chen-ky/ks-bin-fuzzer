@@ -3,6 +3,7 @@ from datastructure.intermediate_representation import IntermediateRepresentation
 from frontend.default_value import DefaultValuePopulator
 from frontend.type_processor import TypeProcessor
 from frontend.enum_processor import EnumProcessor
+from frontend.valid_processor import ValidProcessor
 from frontend.ref_processor import RefProcessor
 
 
@@ -15,7 +16,7 @@ class Frontend():
         populator.populate_default()
 
     def run_preprocessor(self) -> None:
-        processors = [EnumProcessor(self.source),]
+        processors = [ValidProcessor(self.source), EnumProcessor(self.source),]
         for proc in processors:
             proc.pre_process()
 
