@@ -57,7 +57,7 @@ test() {
         python3 output_fuzzer.py > test_file
         # LD_PRELOAD=../../.libs/libpng16.so ./readpng < test_file 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
         LD_PRELOAD=../../.libs/libpng16.so ./pngtopng test_file /dev/null 2>&1 | tee /dev/tty >> "$TEST_TARGET_OUTPUT"
-        if [ $? == 0 ]
+        if [ $? -eq 0 ]
         then
             SUCCESS=$(expr $SUCCESS + 1)
         else
