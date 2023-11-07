@@ -93,6 +93,8 @@ class DefaultValuePopulator():
     def handle_seq_entry(self, val):
         val.setdefault("type", None)  # Generate bytes if not specified
         val["-fz-static"] = False  # Seq entry cannot be static
+        if "repeat" in val and val["repeat"] == "eos":
+            val.setdefault("-fz-repeat-min", 0)
         if "type" in val:
             t = val["type"]
             if t in VALID_INT_TYPE_VAL:

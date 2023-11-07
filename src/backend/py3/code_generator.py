@@ -523,6 +523,8 @@ class Python3CodeGenerator(Generator):
                     code_to_initialise_object = [
                         f"_ = {self.type_code_generator.generate_code(**seq_entry)}"
                     ]
+                    if "-fz-increment-step" in seq_entry:
+                        code_to_initialise_object.append(f'{seq_entry["-fz-increment"]} += ({seq_entry["-fz-increment-step"]})')
                 else:
                     seq_class_name = sanitiser.sanitise_class_name(
                         seq_entry["type"])
@@ -552,8 +554,7 @@ class Python3CodeGenerator(Generator):
                     for_loop_code.extend([f"    self.{entry_name}.append(_)",])
                     indenter.append_lines(for_loop_code, code)
                 case "eos":
-                    min_n_loop = seq_entry.get("-fz-repeat-min")
-                    min_n_loop = min_n_loop if min_n_loop is not None else 0
+                    min_n_loop = seq_entry["-fz-repeat-min"]
                     max_n_loop = seq_entry["-fz-repeat-max"]
                     for_loop_code = [
                         f'repeat_n_times = {self._ks_helper_fn_call("rand_int", start=min_n_loop, end=max_n_loop)}',
