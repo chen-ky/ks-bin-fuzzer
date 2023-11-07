@@ -30,8 +30,8 @@ build_app() {
     # cp -P contrib/libtests/readpng.c "$BUILD_DIR"/app/.
     cp -P contrib/examples/pngtopng.c "$BUILD_DIR"/app/.
     cd "$BUILD_DIR"/app
-    # gcc_cov -lgcov --coverage -Wall -L.libs -lpng readpng.c -o readpng
-    gcc_cov -lgcov --coverage -Wall -L.libs -lpng pngtopng.c -o pngtopng
+    # gcc_cov -lgcov --coverage -Wall readpng.c -o readpng -I. -L.libs -lpng
+    gcc_cov -lgcov --coverage -Wall pngtopng.c -o pngtopng -I. -L.libs -lpng
     cd ../..
 }
 
