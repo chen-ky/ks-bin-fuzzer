@@ -4,6 +4,7 @@ BUILD_DIR='build'
 EXCLUDE_FILES="pnglibconf.* pngtest.* example.*"
 COVERAGE_REPORT='coverage.csv'
 TEST_COUNT=10000
+TEST_SECONDS=$(expr '24' '*' '60' '*' '60')
 
 RED='\033[0;31m'
 YELLOW_BOLD='\033[1;33m'
@@ -40,7 +41,10 @@ test() {
     SUCCESS=0
     FAILED=0
     RAN=0
-    for i in $(seq $TEST_COUNT)
+    TEST_START_TIME=$(date +%s)
+    TEST_END_TIME=$(expr $TEST_SECONDS '+' $TEST_START_TIME)
+    # for i in $(seq $TEST_COUNT)
+    while [ $(date +%s) -lt $TEST_END_TIME ]
     do
         # echo $i
         python3 output_fuzzer.py > test_file
@@ -54,7 +58,7 @@ test() {
         fi
         RAN=$(expr $RAN + 1)
         cd ../.. && \
-        prepare_cov $i $COVERAGE_REPORT && \
+        prepare_cov $RAN $COVERAGE_REPORT && \
         cd "$BUILD_DIR"/app
         rm test_file
     done
