@@ -131,7 +131,8 @@ types:
         # -fz-choice: [0]
       - id: interlace_method
         type: u1
-        -fz-choice: [0, 1]
+        valid: 0
+        # -fz-choice: [0, 1]
   plte_chunk:
     doc-ref: https://www.w3.org/TR/png/#11PLTE
     seq:
